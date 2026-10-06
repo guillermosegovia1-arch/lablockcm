@@ -3,6 +3,9 @@ import { prisma } from '@/lib/prisma';
 import * as XLSX from 'xlsx';
 import bcrypt from 'bcryptjs';
 
+export const dynamic = 'force-dynamic';
+export const maxDuration = 60; // Hasta 60 segundos de ejecución en Vercel
+
 export async function POST(req: NextRequest) {
   try {
     const contentType = req.headers.get('content-type') || '';
