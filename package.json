@@ -1,0 +1,27 @@
+{
+  "name": "lablock-cm-monorepo",
+  "version": "1.0.0",
+  "description": "Sistema de Control de Acceso, Asistencia y Bloqueo para Centro de Cómputo - Colegio Mexicano",
+  "private": true,
+  "workspaces": [
+    "admin-server",
+    "client-lock"
+  ],
+  "scripts": {
+    "dev:server": "npm --prefix admin-server run dev",
+    "dev:client": "npm --prefix client-lock start",
+    "build:server": "npm --prefix admin-server run build",
+    "build:client": "npm --prefix client-lock run build",
+    "db:push": "npm --prefix admin-server run db:push",
+    "db:seed": "npm --prefix admin-server run db:seed"
+  },
+  "keywords": [
+    "kiosk",
+    "electron",
+    "nextjs",
+    "access-control",
+    "laboratory-lock"
+  ],
+  "author": "Colegio Mexicano IT",
+  "license": "MIT"
+}

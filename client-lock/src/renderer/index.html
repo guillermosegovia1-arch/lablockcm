@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LabLock CM | Pantalla de Acceso</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- Ambient Orbs -->
+  <div class="bg-glow-orb orb-1"></div>
+  <div class="bg-glow-orb orb-2"></div>
+
+  <!-- Top Header -->
+  <header>
+    <div class="school-brand">
+      <div class="school-shield">
+        <!-- SVG Shield Icon -->
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <h1>LabLock <span>CM</span></h1>
+        <p>Centro de Cómputo • Colegio Mexicano</p>
+      </div>
+    </div>
+
+    <!-- Detected Machine Info -->
+    <div class="machine-pill">
+      <span class="machine-status-dot"></span>
+      <div>
+        <span id="label-machine-name" class="machine-name">DETECTANDO...</span>
+        <span id="label-machine-ip" class="machine-ip">0.0.0.0</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Center Card -->
+  <main>
+    <div class="lock-card">
+      <div class="lock-badge-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+      </div>
+
+      <h2>Bienvenido al Laboratorio</h2>
+      <p class="subtitle">
+        Ingresa tu Nombre Completo para desbloquear este equipo y registrar tu asistencia.
+      </p>
+
+      <form id="form-unlock">
+        <div class="input-group">
+          <label for="input-nombre">Nombre Completo del Alumno o Docente</label>
+          <div class="input-wrapper">
+            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <input
+              type="text"
+              id="input-nombre"
+              class="input-field"
+              placeholder="Ej: Juan Antonio Garza Morales"
+              autocomplete="off"
+              required
+              autofocus
+            />
+          </div>
+        </div>
+
+        <button type="submit" id="btn-submit" class="btn-unlock">
+          <span>Desbloquear Equipo</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </button>
+
+        <!-- Inline error/success message -->
+        <div id="feedback-banner" class="feedback-banner">
+          <span id="feedback-text"></span>
+        </div>
+      </form>
+    </div>
+  </main>
+
+  <!-- Bottom Footer -->
+  <footer>
+    <div class="clock-display">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"></circle>
+        <polyline points="12 6 12 12 16 14"></polyline>
+      </svg>
+      <span id="clock-time">--:--:--</span>
+      <span style="color: #475569;">•</span>
+      <span id="clock-date">--</span>
+    </div>
+
+    <div class="footer-actions">
+      <button id="btn-open-settings" class="btn-ghost" title="Configurar Servidor API">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+        <span>Ajustes</span>
+      </button>
+
+      <button id="btn-open-emergency" class="btn-ghost" title="Desbloqueo de Emergencia para Soporte">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+        <span>Soporte Técnico</span>
+      </button>
+    </div>
+  </footer>
+
+  <!-- MODAL: Sesión Duplicada en Otro Equipo -->
+  <div id="modal-duplicate" class="modal-overlay">
+    <div class="modal-dialog">
+      <div class="modal-icon warning">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+          <line x1="12" y1="9" x2="12" y2="13"></line>
+          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+      </div>
+
+      <h3 class="modal-title">Sesión Activa Detectada</h3>
+      
+      <p id="modal-duplicate-text" class="modal-body">
+        Esta sesión ya está iniciada en el Equipo: <span id="modal-duplicate-pc" class="highlight-pc">LAB-PC-XX</span>. Comunícate con el encargado si esto es un error.
+      </p>
+
+      <div class="modal-buttons">
+        <button id="btn-close-duplicate-modal" class="btn-primary-modal">
+          Entendido
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Desbloqueo de Emergencia / Mantenimiento -->
+  <div id="modal-emergency" class="modal-overlay">
+    <div class="modal-dialog">
+      <div class="modal-icon emergency">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+      </div>
+
+      <h3 class="modal-title">Mantenimiento de Sistemas</h3>
+      <p class="modal-body">
+        Ingresa la clave maestra institucional de soporte para cerrar la aplicación o desbloquear el equipo.
+      </p>
+
+      <div style="margin-bottom: 20px; text-align: left;">
+        <input
+          type="password"
+          id="input-emergency-key"
+          class="input-field"
+          style="padding-left: 14px; text-align: center;"
+          placeholder="Clave maestra institucional"
+          autocomplete="off"
+        />
+        <div id="emergency-error" style="color: #f87171; font-size: 11px; margin-top: 6px; display: none;"></div>
+      </div>
+
+      <div class="modal-buttons">
+        <button id="btn-close-emergency" class="btn-secondary">
+          Cancelar
+        </button>
+        <button id="btn-confirm-emergency" class="btn-danger-modal">
+          Cerrar Kiosco
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Configuración del Servidor -->
+  <div id="modal-settings" class="modal-overlay">
+    <div class="modal-dialog">
+      <div class="modal-icon settings">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+      </div>
+
+      <h3 class="modal-title">Configuración de Red</h3>
+      <p class="modal-body">
+        Dirección URL del servidor central LabLock CM en la red escolar.
+      </p>
+
+      <div style="margin-bottom: 20px; text-align: left;">
+        <input
+          type="text"
+          id="input-server-url"
+          class="input-field"
+          style="padding-left: 14px;"
+          placeholder="http://192.168.1.50:3000"
+        />
+      </div>
+
+      <div class="modal-buttons">
+        <button id="btn-close-settings" class="btn-secondary">
+          Cancelar
+        </button>
+        <button id="btn-save-settings" class="btn-primary-modal">
+          Guardar Servidor
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
