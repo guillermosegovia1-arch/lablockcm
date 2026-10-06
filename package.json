@@ -10,6 +10,8 @@
   "scripts": {
     "dev:server": "npm --prefix admin-server run dev",
     "dev:client": "npm --prefix client-lock start",
+    "build": "npm --prefix admin-server run build",
+    "postinstall": "npm --prefix admin-server run postinstall",
     "build:server": "npm --prefix admin-server run build",
     "build:client": "npm --prefix client-lock run build",
     "db:push": "npm --prefix admin-server run db:push",

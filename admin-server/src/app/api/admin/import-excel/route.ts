@@ -41,6 +41,12 @@ export async function POST(req: NextRequest) {
 
     const defaultTeacherHash = await bcrypt.hash('1234', 10);
 
+    // Precargar usuarios existentes para evitar consultas dobles fila por fila
+    const existingUsers = await prisma.user.findMany({
+      select: { id: true, nombre: true },
+    });
+    const existingMap = new Map(existingUsers.map((u) => [u.nombre, u.id]));
+
     for (let index = 0; index < rowsToProcess.length; index++) {
       const row = rowsToProcess[index];
 
@@ -100,11 +106,7 @@ export async function POST(req: NextRequest) {
       }
 
       try {
-        const existing = await prisma.user.findUnique({
-          where: { nombre },
-        });
-
-        if (existing) {
+        if (existingMap.has(nombre)) {
           await prisma.user.update({
             where: { nombre },
             data: {
@@ -125,6 +127,7 @@ export async function POST(req: NextRequest) {
               pin_o_password: passwordHash || null,
             },
           });
+          existingMap.set(nombre, 1);
           inserted++;
         }
       } catch (rowErr: any) {

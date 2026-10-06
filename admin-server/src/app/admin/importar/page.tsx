@@ -194,25 +194,45 @@ export default function ImportarPage() {
       )}
 
       {result && (
-        <div className="p-5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 space-y-2">
-          <div className="flex items-center gap-2 font-bold text-sm text-emerald-400">
-            <CheckCircle2 className="w-5 h-5 shrink-0" />
-            <span>{result.message}</span>
+        <div className={`p-5 rounded-2xl border space-y-2 ${
+          result.errors > 0 && result.inserted === 0 && result.updated === 0
+            ? 'bg-red-500/10 border-red-500/30 text-red-300'
+            : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+        }`}>
+          <div className="flex items-center gap-2 font-bold text-sm">
+            {result.errors > 0 && result.inserted === 0 && result.updated === 0 ? (
+              <AlertTriangle className="w-5 h-5 shrink-0 text-red-400" />
+            ) : (
+              <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-400" />
+            )}
+            <span className={result.errors > 0 && result.inserted === 0 && result.updated === 0 ? 'text-red-400' : 'text-emerald-400'}>
+              {result.message}
+            </span>
           </div>
           <div className="grid grid-cols-3 gap-3 text-xs pt-2">
-            <div className="p-3 bg-emerald-950/40 rounded-xl border border-emerald-500/20">
-              <span className="text-slate-400 block">Nuevos Alumnos:</span>
+            <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-700/50">
+              <span className="text-slate-400 block">Nuevos Registros:</span>
               <span className="text-lg font-bold text-emerald-400">{result.inserted}</span>
             </div>
-            <div className="p-3 bg-emerald-950/40 rounded-xl border border-emerald-500/20">
+            <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-700/50">
               <span className="text-slate-400 block">Actualizados:</span>
               <span className="text-lg font-bold text-blue-400">{result.updated}</span>
             </div>
-            <div className="p-3 bg-emerald-950/40 rounded-xl border border-emerald-500/20">
+            <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-700/50">
               <span className="text-slate-400 block">Filas con Error:</span>
               <span className="text-lg font-bold text-amber-400">{result.errors}</span>
             </div>
           </div>
+          {result.errorDetails && result.errorDetails.length > 0 && (
+            <div className="mt-3 p-3 bg-slate-950/70 border border-red-500/30 rounded-xl text-xs text-red-300">
+              <p className="font-semibold text-red-400 mb-1">Motivo del error reportado por el servidor:</p>
+              <ul className="list-disc pl-5 space-y-1 font-mono text-[11px] max-h-40 overflow-y-auto">
+                {result.errorDetails.map((err: string, i: number) => (
+                  <li key={i}>{err}</li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       )}
 
