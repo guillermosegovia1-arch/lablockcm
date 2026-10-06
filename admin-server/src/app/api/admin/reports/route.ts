@@ -17,7 +17,10 @@ export async function GET(req: NextRequest) {
 
     if (search) {
       whereClause.user = {
-        nombre_completo: { contains: search },
+        OR: [
+          { nombre: { contains: search, mode: 'insensitive' } },
+          { grupo_id: { contains: search, mode: 'insensitive' } },
+        ],
       };
     }
 
@@ -50,8 +53,9 @@ export async function GET(req: NextRequest) {
         user: {
           select: {
             id: true,
-            nombre_completo: true,
+            nombre: true,
             rol: true,
+            grupo_id: true,
           },
         },
         workstation: {
@@ -85,8 +89,9 @@ export async function GET(req: NextRequest) {
 
       return {
         id: s.id,
-        nombre: s.user.nombre_completo,
+        nombre: s.user.nombre,
         rol: s.user.rol,
+        grupo_id: s.user.grupo_id || '---',
         equipo: s.workstation.machine_name,
         fecha: inicio.toLocaleDateString('es-MX'),
         fecha_raw: inicio.toISOString().split('T')[0],
@@ -99,11 +104,11 @@ export async function GET(req: NextRequest) {
     });
 
     if (format === 'csv') {
-      const header = 'ID,Nombre Completo,Rol,Equipo,Fecha,Hora Entrada,Hora Salida,Duración,Estado\n';
+      const header = 'ID,Nombre,Rol,Grupo,Equipo,Fecha,Hora Entrada,Hora Salida,Duración,Estado\n';
       const rows = formatted
         .map(
           (r) =>
-            `"${r.id}","${r.nombre.replace(/"/g, '""')}","${r.rol}","${r.equipo}","${r.fecha}","${r.hora_entrada}","${r.hora_salida}","${r.duracion}","${r.estado}"`
+            `"${r.id}","${r.nombre.replace(/"/g, '""')}","${r.rol}","${r.grupo_id}","${r.equipo}","${r.fecha}","${r.hora_entrada}","${r.hora_salida}","${r.duracion}","${r.estado}"`
         )
         .join('\n');
 

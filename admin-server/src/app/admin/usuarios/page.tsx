@@ -15,8 +15,10 @@ import {
 
 interface UserItem {
   id: number;
-  nombre_completo: string;
+  nombre: string;
+  nombre_completo?: string;
   rol: 'alumno' | 'maestro' | 'admin';
+  grupo_id?: string | null;
   activo: boolean;
   createdAt: string;
   _count: {
@@ -34,6 +36,7 @@ export default function UsuariosPage() {
   // New user form state
   const [newNombre, setNewNombre] = useState('');
   const [newRol, setNewRol] = useState('alumno');
+  const [newGrupo, setNewGrupo] = useState('');
   const [newPin, setNewPin] = useState('');
   const [formError, setFormError] = useState('');
 
@@ -85,8 +88,9 @@ export default function UsuariosPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          nombre_completo: newNombre,
+          nombre: newNombre,
           rol: newRol,
+          grupo_id: newGrupo ? newGrupo.trim() : null,
           pin: newPin || undefined,
         }),
       });
@@ -95,6 +99,7 @@ export default function UsuariosPage() {
       if (res.ok) {
         setShowAddModal(false);
         setNewNombre('');
+        setNewGrupo('');
         setNewPin('');
         fetchUsers();
       } else {
@@ -168,8 +173,9 @@ export default function UsuariosPage() {
         <table className="w-full text-left text-xs">
           <thead className="bg-slate-900/90 text-slate-400 font-semibold uppercase tracking-wider border-b border-slate-800">
             <tr>
-              <th className="py-3 px-4">Nombre Completo</th>
+              <th className="py-3 px-4">Nombre</th>
               <th className="py-3 px-3">Rol</th>
+              <th className="py-3 px-3">Grupo</th>
               <th className="py-3 px-3">Sesiones Registradas</th>
               <th className="py-3 px-3">Estado</th>
               <th className="py-3 px-4 text-right">Acción</th>
@@ -187,7 +193,7 @@ export default function UsuariosPage() {
                     ) : (
                       <GraduationCap className="w-3.5 h-3.5 text-blue-400" />
                     )}
-                    <span>{u.nombre_completo}</span>
+                    <span>{u.nombre || u.nombre_completo}</span>
                   </div>
                 </td>
                 <td className="py-3 px-3">
@@ -202,6 +208,15 @@ export default function UsuariosPage() {
                   >
                     {u.rol}
                   </span>
+                </td>
+                <td className="py-3 px-3">
+                  {u.grupo_id ? (
+                    <span className="inline-block px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-slate-800 text-slate-200 border border-slate-700">
+                      {u.grupo_id}
+                    </span>
+                  ) : (
+                    <span className="text-slate-500 text-xs">---</span>
+                  )}
                 </td>
                 <td className="py-3 px-3 font-mono text-slate-400">
                   {u._count.sessions} sesiones
@@ -294,7 +309,20 @@ export default function UsuariosPage() {
 
               <div>
                 <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
-                  PIN o Contraseña (Opcional)
+                  Grupo Escolar (grupo_id)
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ej: 1A, 2B, 3-Secundaria, Sistemas"
+                  value={newGrupo}
+                  onChange={(e) => setNewGrupo(e.target.value)}
+                  className="w-full px-3.5 py-2 bg-slate-950 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:ring-1 focus:ring-purple-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
+                  PIN o Contraseña (Solo para Docentes / Admin)
                 </label>
                 <input
                   type="password"

@@ -16,15 +16,16 @@ async function main() {
 
   const admin = await prisma.user.create({
     data: {
-      nombre_completo: 'adminCM',
+      nombre: 'adminCM',
       rol: 'admin',
+      grupo_id: 'Sistemas',
       activo: true,
       pin_o_password: hashedAdminPassword,
     },
   });
 
   console.log('✅ Base de datos configurada correctamente con Administrador Único:');
-  console.log(`- Usuario: ${admin.nombre_completo}`);
+  console.log(`- Usuario: ${admin.nombre}`);
   console.log(`- Contraseña: admin123456`);
   console.log(`- Rol: ${admin.rol}`);
 }

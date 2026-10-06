@@ -87,19 +87,24 @@ export default function ImportarPage() {
   const downloadTemplate = () => {
     const templateData = [
       {
-        'Nombre Completo': 'Juan Pérez Ramos',
+        'Nombre': 'Juan Pérez Ramos',
         'Rol': 'alumno',
-        'PIN': '',
+        'Grupo': '1A',
       },
       {
-        'Nombre Completo': 'Ana Morales Ruiz',
+        'Nombre': 'Ana Morales Ruiz',
         'Rol': 'alumno',
-        'PIN': '',
+        'Grupo': '1B',
       },
       {
-        'Nombre Completo': 'Prof. Manuel Hernández',
+        'Nombre': 'Carlos Gómez Herrera',
+        'Rol': 'alumno',
+        'Grupo': '2A',
+      },
+      {
+        'Nombre': 'Prof. Manuel Hernández',
         'Rol': 'maestro',
-        'PIN': '1234',
+        'Grupo': 'Docentes',
       },
     ];
 
@@ -119,7 +124,7 @@ export default function ImportarPage() {
             <span>Carga Masiva de Alumnos y Docentes</span>
           </h1>
           <p className="text-xs text-slate-400 mt-1">
-            Importa la lista escolar de matrículas desde hojas de cálculo Excel (.xlsx) o archivos .csv
+            Importa la lista escolar de alumnos desde hojas de cálculo Excel (.xlsx) o archivos .csv
           </p>
         </div>
 
@@ -136,14 +141,14 @@ export default function ImportarPage() {
       <div className="p-4 rounded-2xl bg-blue-950/20 border border-blue-500/20 flex items-start gap-3.5 text-xs text-blue-200">
         <Info className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
         <div className="space-y-1">
-          <p className="font-semibold text-white">Requisitos de Columnas en el Excel:</p>
+          <p className="font-semibold text-white">Estructura de Columnas en el Excel:</p>
           <p>
-            El archivo debe incluir la columna principal <span className="font-mono bg-blue-900/50 px-1.5 py-0.5 rounded text-white font-bold">Nombre Completo</span>. Opcionalmente puedes agregar{' '}
-            <span className="font-mono bg-blue-900/50 px-1.5 py-0.5 rounded text-white">Rol</span> (alumno / maestro) y{' '}
-            <span className="font-mono bg-blue-900/50 px-1.5 py-0.5 rounded text-white">PIN</span>.
+            El archivo debe incluir las columnas: <span className="font-mono bg-blue-900/50 px-1.5 py-0.5 rounded text-white font-bold">Nombre</span> (o Nombre Completo),{' '}
+            <span className="font-mono bg-blue-900/50 px-1.5 py-0.5 rounded text-white font-bold">Rol</span> (alumno / maestro) y{' '}
+            <span className="font-mono bg-blue-900/50 px-1.5 py-0.5 rounded text-white font-bold">Grupo</span> (grupo_id, ej: 1A, 2B, Secundaria).
           </p>
           <p className="text-blue-300">
-            * Si un nombre completo ya existe en el sistema, sus datos se actualizarán automáticamente sin duplicarse.
+            * Los alumnos solo necesitan su nombre para ingresar en el laboratorio escolar. Si un nombre ya existe, se actualizará su grupo automáticamente.
           </p>
         </div>
       </div>

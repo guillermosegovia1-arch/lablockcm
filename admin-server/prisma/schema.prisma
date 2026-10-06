@@ -10,8 +10,9 @@ generator client {
 
 model User {
   id              Int       @id @default(autoincrement())
-  nombre_completo String    @unique // Nombre del alumno/maestro o 'adminCM' para soporte
+  nombre          String    @unique // Nombre del alumno/maestro o 'adminCM' para soporte
   rol             String    @default("alumno") // 'alumno' | 'maestro' | 'admin'
+  grupo_id        String?   // Identificador del grupo escolar (ej. '1A', '2B', 'Sistemas')
   activo          Boolean   @default(true)
   pin_o_password  String?   // Hash bcrypt para adminCM y docentes
   createdAt       DateTime  @default(now())

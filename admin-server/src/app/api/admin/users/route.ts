@@ -9,23 +9,31 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const search = searchParams.get('search') || '';
     const rol = searchParams.get('rol') || '';
+    const grupo = searchParams.get('grupo') || '';
 
     const where: any = {};
     if (search) {
-      where.nombre_completo = { contains: search };
+      where.OR = [
+        { nombre: { contains: search, mode: 'insensitive' } },
+        { grupo_id: { contains: search, mode: 'insensitive' } },
+      ];
     }
     if (rol && rol !== 'todos') {
       where.rol = rol;
     }
+    if (grupo && grupo !== 'todos') {
+      where.grupo_id = grupo;
+    }
 
     const users = await prisma.user.findMany({
       where,
-      orderBy: { nombre_completo: 'asc' },
-      take: 150,
+      orderBy: { nombre: 'asc' },
+      take: 200,
       select: {
         id: true,
-        nombre_completo: true,
+        nombre: true,
         rol: true,
+        grupo_id: true,
         activo: true,
         createdAt: true,
         _count: {
@@ -42,15 +50,19 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { nombre_completo, rol, pin } = await req.json();
+    const body = await req.json();
+    const rawNombre = body.nombre || body.nombre_completo;
+    const rol = body.rol || 'alumno';
+    const grupo_id = body.grupo_id ? String(body.grupo_id).trim() : null;
+    const pin = body.pin;
 
-    if (!nombre_completo) {
-      return NextResponse.json({ error: 'Nombre completo requerido' }, { status: 400 });
+    if (!rawNombre) {
+      return NextResponse.json({ error: 'El nombre es obligatorio.' }, { status: 400 });
     }
 
-    const cleanNombre = nombre_completo.trim();
+    const cleanNombre = String(rawNombre).trim();
     const existing = await prisma.user.findUnique({
-      where: { nombre_completo: cleanNombre },
+      where: { nombre: cleanNombre },
     });
 
     if (existing) {
@@ -64,8 +76,9 @@ export async function POST(req: NextRequest) {
 
     const user = await prisma.user.create({
       data: {
-        nombre_completo: cleanNombre,
+        nombre: cleanNombre,
         rol: rol || 'alumno',
+        grupo_id: grupo_id,
         activo: true,
         pin_o_password: hashedPin,
       },
@@ -79,14 +92,17 @@ export async function POST(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   try {
-    const { id, activo, rol, nombre_completo } = await req.json();
+    const body = await req.json();
+    const { id, activo, rol, grupo_id } = body;
+    const rawNombre = body.nombre || body.nombre_completo;
 
     const updated = await prisma.user.update({
       where: { id: Number(id) },
       data: {
         ...(activo !== undefined ? { activo } : {}),
         ...(rol ? { rol } : {}),
-        ...(nombre_completo ? { nombre_completo: nombre_completo.trim() } : {}),
+        ...(grupo_id !== undefined ? { grupo_id: grupo_id ? String(grupo_id).trim() : null } : {}),
+        ...(rawNombre ? { nombre: String(rawNombre).trim() } : {}),
       },
     });
 

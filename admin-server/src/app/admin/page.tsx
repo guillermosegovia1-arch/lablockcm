@@ -30,8 +30,10 @@ interface WorkstationData {
     elapsed_minutes: number;
     user: {
       id: number;
-      nombre_completo: string;
+      nombre: string;
+      nombre_completo?: string;
       rol: string;
+      grupo_id?: string | null;
     };
   } | null;
 }
@@ -152,8 +154,10 @@ export default function DashboardPage() {
   const filteredWorkstations = workstations.filter((ws) => {
     const query = searchFilter.toLowerCase();
     const pcMatch = ws.machine_name.toLowerCase().includes(query);
-    const userMatch = ws.active_session?.user.nombre_completo.toLowerCase().includes(query) || false;
-    return pcMatch || userMatch;
+    const userName = ws.active_session?.user.nombre || ws.active_session?.user.nombre_completo || '';
+    const userMatch = userName.toLowerCase().includes(query);
+    const grupoMatch = ws.active_session?.user.grupo_id?.toLowerCase().includes(query) || false;
+    return pcMatch || userMatch || grupoMatch;
   });
 
   const total = workstations.length;
@@ -352,13 +356,20 @@ export default function DashboardPage() {
                   <div className="p-3 rounded-xl bg-slate-900/80 border border-blue-500/20 space-y-2 mb-3">
                     <div className="flex items-start gap-2">
                       <User className="w-4 h-4 text-blue-400 mt-0.5 shrink-0" />
-                      <div className="overflow-hidden">
+                      <div className="overflow-hidden w-full">
                         <p className="text-xs font-semibold text-white truncate">
-                          {session.user.nombre_completo}
+                          {session.user.nombre || session.user.nombre_completo}
                         </p>
-                        <p className="text-[11px] text-blue-400 font-mono capitalize">
-                          Rol: {session.user.rol}
-                        </p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-[10px] text-blue-400 font-mono capitalize">
+                            {session.user.rol}
+                          </span>
+                          {session.user.grupo_id && (
+                            <span className="text-[10px] bg-slate-800 text-slate-300 px-1.5 py-0.2 rounded border border-slate-700">
+                              Grupo: {session.user.grupo_id}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
 

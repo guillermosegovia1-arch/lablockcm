@@ -13,7 +13,7 @@ let heartbeatInterval = null;
 // Configuración por defecto o persistida
 const configPath = path.join(app.getPath('userData'), 'lablock-config.json');
 let appConfig = {
-  serverUrl: 'http://localhost:3000',
+  serverUrl: 'https://lablockcm.vercel.app',
   autoStartOnBoot: true,
 };
 

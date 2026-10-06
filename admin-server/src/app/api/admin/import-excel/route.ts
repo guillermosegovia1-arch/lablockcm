@@ -42,10 +42,10 @@ export async function POST(req: NextRequest) {
       const row = rowsToProcess[index];
 
       const rawNombre =
-        row['Nombre Completo'] ||
         row['Nombre'] ||
-        row['nombre_completo'] ||
         row['nombre'] ||
+        row['Nombre Completo'] ||
+        row['nombre_completo'] ||
         row['Alumno'] ||
         row['Estudiante'] ||
         row['Profesor'] ||
@@ -58,15 +58,27 @@ export async function POST(req: NextRequest) {
         row['tipo'] ||
         'alumno';
 
+      const rawGrupo =
+        row['grupo_id'] ||
+        row['Grupo_ID'] ||
+        row['Grupo'] ||
+        row['grupo'] ||
+        row['Salon'] ||
+        row['salon'] ||
+        row['Grado'] ||
+        row['grado'] ||
+        null;
+
       const rawPin = row['PIN'] || row['pin'] || row['Password'] || row['password'];
 
       if (!rawNombre) {
         errors++;
-        errorDetails.push(`Fila ${index + 2}: Nombre Completo faltante.`);
+        errorDetails.push(`Fila ${index + 2}: Nombre faltante.`);
         continue;
       }
 
       const nombre = String(rawNombre).trim();
+      const grupo_id = rawGrupo ? String(rawGrupo).trim() : null;
 
       let rol = String(rawRol).trim().toLowerCase();
       if (rol.includes('maestr') || rol.includes('docent') || rol.includes('prof')) {
@@ -86,14 +98,15 @@ export async function POST(req: NextRequest) {
 
       try {
         const existing = await prisma.user.findUnique({
-          where: { nombre_completo: nombre },
+          where: { nombre },
         });
 
         if (existing) {
           await prisma.user.update({
-            where: { nombre_completo: nombre },
+            where: { nombre },
             data: {
-              rol: rol,
+              rol,
+              grupo_id,
               activo: true,
               ...(passwordHash ? { pin_o_password: passwordHash } : {}),
             },
@@ -102,8 +115,9 @@ export async function POST(req: NextRequest) {
         } else {
           await prisma.user.create({
             data: {
-              nombre_completo: nombre,
+              nombre,
               rol,
+              grupo_id,
               activo: true,
               pin_o_password: passwordHash || null,
             },

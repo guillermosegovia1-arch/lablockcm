@@ -3,7 +3,7 @@
 let systemInfo = {
   hostname: 'EQUIPO-LOCAL',
   ip: '127.0.0.1',
-  serverUrl: 'http://localhost:3000',
+  serverUrl: 'https://lablockcm.vercel.app',
 };
 
 let activeSession = null;

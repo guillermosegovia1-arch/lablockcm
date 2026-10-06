@@ -29,8 +29,8 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({
             authorized: true,
             role: 'admin',
-            admin_name: admin.nombre_completo,
-            message: `Desbloqueo autorizado por ${admin.nombre_completo}`,
+            admin_name: admin.nombre,
+            message: `Desbloqueo autorizado por ${admin.nombre}`,
           });
         }
       }

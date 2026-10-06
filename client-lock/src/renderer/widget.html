@@ -120,7 +120,7 @@
       if (window.lablockApi) {
         const session = await window.lablockApi.getCurrentSession();
         if (session && session.user) {
-          widgetUser.textContent = session.user.nombre_completo;
+          widgetUser.textContent = session.user.nombre || session.user.nombre_completo;
           if (session.session && session.session.hora_inicio) {
             startTime = new Date(session.session.hora_inicio).getTime();
           }

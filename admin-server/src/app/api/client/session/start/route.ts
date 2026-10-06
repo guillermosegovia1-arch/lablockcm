@@ -16,9 +16,9 @@ export async function POST(req: NextRequest) {
     const cleanMachineName = machine_name.trim().toUpperCase();
     const clientIp = ip_address || '127.0.0.1';
 
-    // 1. Buscar usuario por nombre completo
+    // 1. Buscar usuario por nombre
     const user = await prisma.user.findUnique({
-      where: { nombre_completo: queryName },
+      where: { nombre: queryName },
     });
 
     if (!user || !user.activo) {
@@ -77,8 +77,10 @@ export async function POST(req: NextRequest) {
           },
           user: {
             id: user.id,
-            nombre_completo: user.nombre_completo,
+            nombre: user.nombre,
+            nombre_completo: user.nombre,
             rol: user.rol,
+            grupo_id: user.grupo_id,
           },
           workstation: {
             id: existingActiveSession.workstation_id,
@@ -155,8 +157,10 @@ export async function POST(req: NextRequest) {
       },
       user: {
         id: user.id,
-        nombre_completo: user.nombre_completo,
+        nombre: user.nombre,
+        nombre_completo: user.nombre,
         rol: user.rol,
+        grupo_id: user.grupo_id,
       },
       workstation: {
         id: workstation.id,

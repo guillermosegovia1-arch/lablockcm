@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     }
 
     const user = await prisma.user.findUnique({
-      where: { nombre_completo: loginUser },
+      where: { nombre: loginUser },
     });
 
     if (!user || !user.activo) {
@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
 
     const token = signAdminToken({
       userId: user.id,
-      nombre: user.nombre_completo,
+      nombre: user.nombre,
       rol: user.rol,
     });
 
@@ -57,8 +57,9 @@ export async function POST(req: NextRequest) {
       success: true,
       user: {
         id: user.id,
-        nombre: user.nombre_completo,
+        nombre: user.nombre,
         rol: user.rol,
+        grupo_id: user.grupo_id,
       },
       token,
     });

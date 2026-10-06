@@ -14,8 +14,9 @@ export async function GET(req: NextRequest) {
             user: {
               select: {
                 id: true,
-                nombre_completo: true,
+                nombre: true,
                 rol: true,
+                grupo_id: true,
               },
             },
           },
