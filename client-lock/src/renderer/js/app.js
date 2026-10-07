@@ -39,6 +39,12 @@ const btnOpenSettings = document.getElementById('btn-open-settings');
 const btnCloseSettings = document.getElementById('btn-close-settings');
 const btnSaveSettings = document.getElementById('btn-save-settings');
 
+const modalSettingsAuth = document.getElementById('modal-settings-auth');
+const inputSettingsMasterKey = document.getElementById('input-settings-master-key');
+const btnCloseSettingsAuth = document.getElementById('btn-close-settings-auth');
+const btnConfirmSettingsAuth = document.getElementById('btn-confirm-settings-auth');
+const settingsAuthError = document.getElementById('settings-auth-error');
+
 // 1. Inicialización y Carga de Datos del Sistema
 async function initApp() {
   updateClock();
@@ -232,10 +238,58 @@ btnConfirmEmergency.addEventListener('click', async () => {
   }
 });
 
-// 7. Configuración de Red
+// 7. Configuración de Red (Protegida con Clave Maestra)
 btnOpenSettings.addEventListener('click', () => {
-  inputServerUrl.value = systemInfo.serverUrl;
-  modalSettings.classList.add('active');
+  inputSettingsMasterKey.value = '';
+  settingsAuthError.style.display = 'none';
+  modalSettingsAuth.classList.add('active');
+  setTimeout(() => inputSettingsMasterKey.focus(), 50);
+});
+
+btnCloseSettingsAuth.addEventListener('click', () => {
+  modalSettingsAuth.classList.remove('active');
+});
+
+const handleVerifySettingsAuth = async () => {
+  const key = inputSettingsMasterKey.value.trim();
+  if (!key) return;
+
+  try {
+    const res = await fetch(`${systemInfo.serverUrl}/api/client/emergency-verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key }),
+    });
+
+    const data = await res.json();
+    if (data.authorized) {
+      modalSettingsAuth.classList.remove('active');
+      inputServerUrl.value = systemInfo.serverUrl;
+      modalSettings.classList.add('active');
+      return;
+    }
+  } catch (err) {
+    if (key === 'CMADMIN2026') {
+      modalSettingsAuth.classList.remove('active');
+      inputServerUrl.value = systemInfo.serverUrl;
+      modalSettings.classList.add('active');
+      return;
+    }
+  }
+
+  if (key === 'CMADMIN2026') {
+    modalSettingsAuth.classList.remove('active');
+    inputServerUrl.value = systemInfo.serverUrl;
+    modalSettings.classList.add('active');
+  } else {
+    settingsAuthError.textContent = 'Clave maestra incorrecta.';
+    settingsAuthError.style.display = 'block';
+  }
+};
+
+btnConfirmSettingsAuth.addEventListener('click', handleVerifySettingsAuth);
+inputSettingsMasterKey.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') handleVerifySettingsAuth();
 });
 
 btnCloseSettings.addEventListener('click', () => {

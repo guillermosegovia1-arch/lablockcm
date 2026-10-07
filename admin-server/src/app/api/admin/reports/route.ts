@@ -129,3 +129,24 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Error al generar reporte' }, { status: 500 });
   }
 }
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ error: 'ID de sesión requerido' }, { status: 400 });
+    }
+
+    await prisma.session.delete({
+      where: { id: Number(id) },
+    });
+
+    return NextResponse.json({ success: true, message: 'Registro de asistencia eliminado.' });
+  } catch (error: any) {
+    console.error('Error al eliminar sesión:', error);
+    return NextResponse.json({ error: error.message || 'Error al eliminar el registro.' }, { status: 500 });
+  }
+}
+

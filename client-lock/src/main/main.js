@@ -105,14 +105,17 @@ function createFloatingWidget() {
   const { width } = primaryDisplay.workAreaSize;
 
   floatingWidgetWindow = new BrowserWindow({
-    width: 320,
-    height: 70,
-    x: width - 340,
+    width: 250,
+    height: 48,
+    x: width - 270,
     y: 20,
     frame: false,
     alwaysOnTop: true,
     transparent: true,
     resizable: false,
+    closable: false,
+    minimizable: false,
+    maximizable: false,
     skipTaskbar: true,
     webPreferences: {
       preload: path.join(__dirname, '../preload/preload.js'),
@@ -121,6 +124,7 @@ function createFloatingWidget() {
     },
   });
 
+  floatingWidgetWindow.setAlwaysOnTop(true, 'screen-saver');
   floatingWidgetWindow.loadFile(path.join(__dirname, '../renderer/widget.html'));
 }
 
@@ -244,11 +248,11 @@ function unlockWorkstation(sessionData) {
   isLocked = false;
   currentSessionData = sessionData;
 
-  // Quitar kiosco y minimizar pantalla principal
+  // Quitar kiosco y ocultar completamente la pantalla de bienvenida mientras dura la clase
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.setKiosk(false);
     mainWindow.setAlwaysOnTop(false);
-    mainWindow.minimize();
+    mainWindow.hide();
   }
 
   // Desregistrar bloqueo agresivo de atajos durante su clase
@@ -398,3 +402,8 @@ ipcMain.on('emergency-exit-app', () => {
 ipcMain.on('minimize-widget', () => {
   closeFloatingWidget();
 });
+
+ipcMain.on('trigger-end-session', () => {
+  triggerEndSession();
+});
+

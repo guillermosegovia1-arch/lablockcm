@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld('lablockApi', {
   notifySessionUnlocked: (sessionData) => ipcRenderer.send('session-unlocked', sessionData),
   notifySessionLocked: (reason) => ipcRenderer.send('session-locked', reason),
   emergencyExitApp: () => ipcRenderer.send('emergency-exit-app'),
+  triggerEndSession: () => ipcRenderer.send('trigger-end-session'),
   minimizeWidget: () => ipcRenderer.send('minimize-widget'),
 
   // Event Listeners from Main

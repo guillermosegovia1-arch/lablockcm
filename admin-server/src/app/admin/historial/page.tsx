@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   Clock,
   AlertOctagon,
+  Trash2,
 } from 'lucide-react';
 
 interface ReportRow {
@@ -74,6 +75,27 @@ export default function HistorialPage() {
     params.append('format', 'csv');
 
     window.open(`/api/admin/reports?${params.toString()}`, '_blank');
+  };
+
+  const handleDeleteSession = async (id: number, nombre: string) => {
+    if (!confirm(`¿Estás seguro de eliminar el registro de sesión de "${nombre}"?`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/admin/reports?id=${id}`, {
+        method: 'DELETE',
+      });
+
+      if (res.ok) {
+        setData((prev) => prev.filter((r) => r.id !== id));
+      } else {
+        const json = await res.json();
+        alert(json.error || 'No se pudo eliminar el registro.');
+      }
+    } catch (err: any) {
+      alert(`Error al eliminar: ${err.message}`);
+    }
   };
 
   const totalMinutos = data.reduce((acc, row) => acc + row.duracion_minutos, 0);
@@ -209,6 +231,7 @@ export default function HistorialPage() {
               <th className="py-3.5 px-3">Salida</th>
               <th className="py-3.5 px-3">Duración</th>
               <th className="py-3.5 px-4">Estado</th>
+              <th className="py-3.5 px-3 text-right">Acción</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800/60">
@@ -260,6 +283,15 @@ export default function HistorialPage() {
                     {row.estado === 'forzada_cierre' && <AlertOctagon className="w-3 h-3 text-amber-400" />}
                     {row.estado}
                   </span>
+                </td>
+                <td className="py-3 px-3 text-right">
+                  <button
+                    onClick={() => handleDeleteSession(row.id, row.nombre)}
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                    title={`Eliminar registro de ${row.nombre}`}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </td>
               </tr>
             ))}

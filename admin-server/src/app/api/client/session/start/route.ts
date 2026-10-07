@@ -15,10 +15,16 @@ export async function POST(req: NextRequest) {
 
     const cleanMachineName = machine_name.trim().toUpperCase();
     const clientIp = ip_address || '127.0.0.1';
+    const normalizedName = queryName.replace(/\s+/g, ' ').trim();
 
-    // 1. Buscar usuario por nombre
-    const user = await prisma.user.findUnique({
-      where: { nombre: queryName },
+    // 1. Buscar usuario por nombre (insensible a mayúsculas y minúsculas)
+    const user = await prisma.user.findFirst({
+      where: {
+        nombre: {
+          equals: normalizedName,
+          mode: 'insensitive',
+        },
+      },
     });
 
     if (!user || !user.activo) {
