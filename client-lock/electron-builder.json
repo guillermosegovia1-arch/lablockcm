@@ -1,21 +1,20 @@
 {
   "appId": "mx.colegiomexicano.lablock",
   "productName": "LabLock CM Client",
+  "electronVersion": "31.3.0",
   "artifactName": "${productName}-${version}-Setup.${ext}",
   "directories": {
-    "output": "dist",
-    "buildResources": "assets"
+    "output": "dist"
   },
   "files": [
     "src/**/*",
-    "assets/**/*",
     "package.json"
   ],
   "win": {
     "target": [
       {
         "target": "nsis",
-        "arch": ["x64", "ia32"]
+        "arch": ["x64"]
       },
       {
         "target": "portable",

@@ -2,6 +2,7 @@
   "name": "client-lock",
   "version": "1.0.0",
   "description": "Cliente Kiosco de Bloqueo de Computadoras - Colegio Mexicano",
+  "author": "Colegio Mexicano IT",
   "main": "src/main/main.js",
   "scripts": {
     "start": "electron .",
@@ -13,12 +14,15 @@
     "dotenv": "^16.4.5"
   },
   "devDependencies": {
-    "electron": "^31.3.0",
+    "7zip-bin": "^5.2.0",
+    "electron": "31.3.0",
     "electron-builder": "^24.13.3"
   },
   "build": {
     "appId": "mx.colegiomexicano.lablock",
     "productName": "LabLock CM Client",
+    "electronVersion": "31.3.0",
+    "artifactName": "${productName}-${version}-Setup.${ext}",
     "directories": {
       "output": "dist"
     },
@@ -31,7 +35,10 @@
     },
     "nsis": {
       "oneClick": false,
+      "perMachine": true,
       "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
       "runAfterFinish": true
     }
   }
