@@ -76,7 +76,10 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     console.error('Error en /api/auth/login:', error);
     return NextResponse.json(
-      { error: 'Error interno del servidor.' },
+      { 
+        error: error?.message || 'Error interno del servidor.',
+        details: error?.stack?.split('\n')[0] || undefined
+      },
       { status: 500 }
     );
   }
