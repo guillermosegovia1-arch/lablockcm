@@ -94,3 +94,30 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+    if (!id) {
+      return NextResponse.json({ error: 'ID de equipo requerido.' }, { status: 400 });
+    }
+
+    const wsId = Number(id);
+
+    // Eliminar sesiones asociadas primero
+    await prisma.session.deleteMany({
+      where: { workstation_id: wsId },
+    });
+
+    // Eliminar el equipo registrado
+    await prisma.workstation.delete({
+      where: { id: wsId },
+    });
+
+    return NextResponse.json({ success: true, message: 'Equipo eliminado del sistema.' });
+  } catch (error: any) {
+    console.error('Error al eliminar equipo:', error);
+    return NextResponse.json({ error: error.message || 'Error al eliminar el equipo.' }, { status: 500 });
+  }
+}

@@ -15,6 +15,7 @@ import {
   CheckCircle2,
   AlertTriangle,
   Search,
+  Trash2,
 } from 'lucide-react';
 
 interface WorkstationData {
@@ -118,6 +119,31 @@ export default function DashboardPage() {
       }
     } catch (err: any) {
       setMessage({ text: err.message, type: 'error' });
+    } finally {
+      setActionLoading(null);
+      setTimeout(() => setMessage(null), 4000);
+    }
+  };
+
+  const handleDeleteWorkstation = async (ws: WorkstationData) => {
+    if (!confirm(`¿Estás seguro de eliminar el equipo "${ws.machine_name}" del dashboard?\nEsta acción removerá el equipo registrado del centro de cómputo.`)) {
+      return;
+    }
+
+    setActionLoading(ws.id);
+    try {
+      const res = await fetch(`/api/admin/workstations?id=${ws.id}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setMessage({ text: `Equipo ${ws.machine_name} eliminado del sistema.`, type: 'success' });
+        setWorkstations((prev) => prev.filter((w) => w.id !== ws.id));
+      } else {
+        setMessage({ text: data.error || 'Error al eliminar equipo', type: 'error' });
+      }
+    } catch (err: any) {
+      setMessage({ text: err.message || 'Error de conexión', type: 'error' });
     } finally {
       setActionLoading(null);
       setTimeout(() => setMessage(null), 4000);
@@ -411,7 +437,7 @@ export default function DashboardPage() {
                     isBloqueado
                       ? 'bg-emerald-600/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-600/20'
                       : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'
-                  } ${!isEnUso ? 'w-full' : ''}`}
+                  } ${!isEnUso ? 'flex-1' : ''}`}
                 >
                   {isBloqueado ? (
                     <>
@@ -424,6 +450,15 @@ export default function DashboardPage() {
                       <span>{isEnUso ? '' : 'Bloquear'}</span>
                     </>
                   )}
+                </button>
+
+                <button
+                  onClick={() => handleDeleteWorkstation(ws)}
+                  disabled={actionLoading === ws.id}
+                  title={`Eliminar equipo ${ws.machine_name} del dashboard`}
+                  className="p-2 rounded-xl border border-slate-800 bg-slate-900/80 hover:bg-red-500/10 hover:border-red-500/30 text-slate-400 hover:text-red-400 transition-colors flex items-center justify-center shrink-0 disabled:opacity-50"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
