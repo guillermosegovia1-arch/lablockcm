@@ -20,6 +20,7 @@ interface ReportRow {
   id: number;
   nombre: string;
   rol: string;
+  grupo_id?: string;
   equipo: string;
   fecha: string;
   fecha_raw: string;
@@ -32,9 +33,11 @@ interface ReportRow {
 
 export default function HistorialPage() {
   const [data, setData] = useState<ReportRow[]>([]);
+  const [availableGroups, setAvailableGroups] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [rol, setRol] = useState('todos');
+  const [grupo, setGrupo] = useState('todos');
   const [workstation, setWorkstation] = useState('todos');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
@@ -45,6 +48,7 @@ export default function HistorialPage() {
       const params = new URLSearchParams();
       if (search) params.append('search', search);
       if (rol !== 'todos') params.append('rol', rol);
+      if (grupo !== 'todos') params.append('grupo', grupo);
       if (workstation !== 'todos') params.append('workstation', workstation);
       if (dateFrom) params.append('dateFrom', dateFrom);
       if (dateTo) params.append('dateTo', dateTo);
@@ -53,13 +57,16 @@ export default function HistorialPage() {
       if (res.ok) {
         const json = await res.json();
         setData(json.sessions || []);
+        if (json.groups && Array.isArray(json.groups)) {
+          setAvailableGroups(json.groups);
+        }
       }
     } catch (err) {
       console.error('Error fetching reports:', err);
     } finally {
       setLoading(false);
     }
-  }, [search, rol, workstation, dateFrom, dateTo]);
+  }, [search, rol, grupo, workstation, dateFrom, dateTo]);
 
   useEffect(() => {
     fetchReports();
@@ -69,6 +76,7 @@ export default function HistorialPage() {
     const params = new URLSearchParams();
     if (search) params.append('search', search);
     if (rol !== 'todos') params.append('rol', rol);
+    if (grupo !== 'todos') params.append('grupo', grupo);
     if (workstation !== 'todos') params.append('workstation', workstation);
     if (dateFrom) params.append('dateFrom', dateFrom);
     if (dateTo) params.append('dateTo', dateTo);
@@ -170,7 +178,7 @@ export default function HistorialPage() {
       </div>
 
       {/* Filter Bar */}
-      <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+      <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
         {/* Search */}
         <div className="lg:col-span-2 relative">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -194,6 +202,22 @@ export default function HistorialPage() {
             <option value="alumno">Alumnos</option>
             <option value="maestro">Maestros</option>
             <option value="admin">Administradores</option>
+          </select>
+        </div>
+
+        {/* Grupo Selector */}
+        <div>
+          <select
+            value={grupo}
+            onChange={(e) => setGrupo(e.target.value)}
+            className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
+          >
+            <option value="todos">Todos los Grupos</option>
+            {availableGroups.map((g) => (
+              <option key={g} value={g}>
+                Grupo {g}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -225,6 +249,7 @@ export default function HistorialPage() {
             <tr>
               <th className="py-3.5 px-4">Alumno / Docente</th>
               <th className="py-3.5 px-3">Rol</th>
+              <th className="py-3.5 px-3">Grupo</th>
               <th className="py-3.5 px-3">Equipo</th>
               <th className="py-3.5 px-3">Fecha</th>
               <th className="py-3.5 px-3">Entrada</th>
@@ -252,6 +277,15 @@ export default function HistorialPage() {
                   >
                     {row.rol}
                   </span>
+                </td>
+                <td className="py-3 px-3">
+                  {row.grupo_id && row.grupo_id !== '---' ? (
+                    <span className="inline-block px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-slate-800 text-slate-200 border border-slate-700">
+                      {row.grupo_id}
+                    </span>
+                  ) : (
+                    <span className="text-slate-500 text-xs">---</span>
+                  )}
                 </td>
                 <td className="py-3 px-3 font-mono text-slate-300 font-medium">
                   {row.equipo}

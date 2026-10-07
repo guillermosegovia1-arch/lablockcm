@@ -59,8 +59,10 @@ async function initApp() {
 
       // Suscribirse a eventos de Electron Main
       window.lablockApi.onForceLock((data) => {
-        showFeedback(data.reason || 'Sesión finalizada remotamente.', 'error');
-        resetForm();
+        const reason = data.reason || 'Sesión finalizada remotamente.';
+        const isSuccess = reason.toLowerCase().includes('correctamente') || reason.toLowerCase().includes('éxito');
+        showFeedback(reason, isSuccess ? 'success' : 'error', 10000);
+        resetForm(false);
       });
 
       window.lablockApi.onRequestEndSession(() => {
@@ -156,19 +158,15 @@ formUnlock.addEventListener('submit', async (e) => {
   }
 });
 
-function resetForm() {
+function resetForm(clearFeedback = false) {
   if (inputNombre) {
     inputNombre.value = '';
     setTimeout(() => {
       try { inputNombre.focus(); } catch (e) {}
     }, 120);
   }
-  if (feedbackBanner) {
-    feedbackBanner.className = 'feedback-banner';
-    feedbackBanner.style.display = 'none';
-  }
-  if (feedbackText) {
-    feedbackText.textContent = '';
+  if (clearFeedback) {
+    hideFeedback();
   }
   if (btnSubmit) {
     btnSubmit.disabled = false;
@@ -180,6 +178,13 @@ function resetForm() {
       </svg>
     `;
   }
+}
+
+// Ocultar feedback automáticamente en cuanto el usuario empiece a escribir
+if (inputNombre) {
+  inputNombre.addEventListener('input', () => {
+    hideFeedback();
+  });
 }
 
 // 4. Cierre de Sesión voluntario desde widget o atajo
@@ -335,18 +340,37 @@ btnSaveSettings.addEventListener('click', () => {
 });
 
 // Helpers
-function showFeedback(text, type = 'error') {
+let feedbackTimer = null;
+
+function showFeedback(text, type = 'error', durationMs = 10000) {
+  if (feedbackTimer) {
+    clearTimeout(feedbackTimer);
+    feedbackTimer = null;
+  }
+  if (!feedbackBanner || !feedbackText) return;
+
   feedbackText.textContent = text;
   feedbackBanner.className = `feedback-banner show ${type === 'error' ? 'banner-error' : 'banner-success'}`;
+
+  // Se oculta automáticamente tras durationMs (por defecto 10 segundos)
+  if (durationMs > 0) {
+    feedbackTimer = setTimeout(() => {
+      hideFeedback();
+    }, durationMs);
+  }
 }
 
 function hideFeedback() {
-  feedbackBanner.className = 'feedback-banner';
-}
-
-function resetForm() {
-  inputNombre.value = '';
-  inputNombre.focus();
+  if (feedbackTimer) {
+    clearTimeout(feedbackTimer);
+    feedbackTimer = null;
+  }
+  if (feedbackBanner) {
+    feedbackBanner.className = 'feedback-banner';
+  }
+  if (feedbackText) {
+    feedbackText.textContent = '';
+  }
 }
 
 // Iniciar al cargar

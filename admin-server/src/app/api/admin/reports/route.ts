@@ -8,6 +8,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const search = searchParams.get('search') || '';
     const rol = searchParams.get('rol') || '';
+    const grupo = searchParams.get('grupo') || '';
     const workstation = searchParams.get('workstation') || '';
     const dateFrom = searchParams.get('dateFrom');
     const dateTo = searchParams.get('dateTo');
@@ -31,6 +32,13 @@ export async function GET(req: NextRequest) {
       };
     }
 
+    if (grupo && grupo !== 'todos') {
+      whereClause.user = {
+        ...whereClause.user,
+        grupo_id: { equals: grupo, mode: 'insensitive' },
+      };
+    }
+
     if (workstation && workstation !== 'todos') {
       whereClause.workstation = {
         machine_name: workstation,
@@ -47,28 +55,52 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const sessions = await prisma.session.findMany({
-      where: whereClause,
-      include: {
-        user: {
-          select: {
-            id: true,
-            nombre: true,
-            rol: true,
-            grupo_id: true,
+    const [sessions, groupsRaw] = await Promise.all([
+      prisma.session.findMany({
+        where: whereClause,
+        include: {
+          user: {
+            select: {
+              id: true,
+              nombre: true,
+              rol: true,
+              grupo_id: true,
+            },
+          },
+          workstation: {
+            select: {
+              id: true,
+              machine_name: true,
+              ip_address: true,
+            },
           },
         },
-        workstation: {
-          select: {
-            id: true,
-            machine_name: true,
-            ip_address: true,
-          },
-        },
-      },
-      orderBy: { hora_inicio: 'desc' },
-      take: 200,
+        orderBy: { hora_inicio: 'desc' },
+        take: 200,
+      }),
+      prisma.user.findMany({
+        where: { grupo_id: { not: null } },
+        select: { grupo_id: true },
+        distinct: ['grupo_id'],
+      }),
+    ]);
+
+    const availableGroups: string[] = Array.from(
+      new Set(
+        groupsRaw
+          .map((g) => g.grupo_id?.trim())
+          .filter((g): g is string => Boolean(g && g.length > 0))
+      )
+    );
+
+    sessions.forEach((s) => {
+      const g = s.user.grupo_id?.trim();
+      if (g && !availableGroups.includes(g)) {
+        availableGroups.push(g);
+      }
     });
+
+    availableGroups.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
 
     const formatted = sessions.map((s) => {
       const inicio = new Date(s.hora_inicio);
@@ -123,6 +155,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       total: formatted.length,
       sessions: formatted,
+      groups: availableGroups,
     });
   } catch (error: any) {
     console.error('Error en /api/admin/reports:', error);
