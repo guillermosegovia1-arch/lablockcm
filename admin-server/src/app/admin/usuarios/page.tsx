@@ -11,6 +11,8 @@ import {
   GraduationCap,
   Briefcase,
   RefreshCw,
+  Pencil,
+  Trash2,
 } from 'lucide-react';
 
 interface UserItem {
@@ -39,6 +41,16 @@ export default function UsuariosPage() {
   const [newGrupo, setNewGrupo] = useState('');
   const [newPin, setNewPin] = useState('');
   const [formError, setFormError] = useState('');
+
+  // Edit user state
+  const [editingUser, setEditingUser] = useState<UserItem | null>(null);
+  const [editNombre, setEditNombre] = useState('');
+  const [editRol, setEditRol] = useState<'alumno' | 'maestro' | 'admin'>('alumno');
+  const [editGrupo, setEditGrupo] = useState('');
+  const [editActivo, setEditActivo] = useState(true);
+  const [editPin, setEditPin] = useState('');
+  const [editError, setEditError] = useState('');
+  const [editLoading, setEditLoading] = useState(false);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -76,6 +88,76 @@ export default function UsuariosPage() {
       }
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const handleOpenEdit = (u: UserItem) => {
+    setEditingUser(u);
+    setEditNombre(u.nombre);
+    setEditRol(u.rol);
+    setEditGrupo(u.grupo_id || '');
+    setEditActivo(u.activo);
+    setEditPin('');
+    setEditError('');
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+    setEditError('');
+    setEditLoading(true);
+
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editingUser.id,
+          nombre: editNombre.trim(),
+          rol: editRol,
+          grupo_id: editGrupo.trim() || null,
+          activo: editActivo,
+          pin: editPin.trim() || undefined,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setEditingUser(null);
+        fetchUsers();
+      } else {
+        setEditError(data.error || 'Error al actualizar usuario.');
+      }
+    } catch (err: any) {
+      setEditError(err.message || 'Error de conexión.');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const handleDeleteUser = async (u: UserItem) => {
+    if (u.nombre === 'adminCM') {
+      alert('No es posible eliminar al Administrador Principal (adminCM).');
+      return;
+    }
+
+    if (!confirm(`¿Estás seguro de eliminar al usuario "${u.nombre}"?\nEsta acción eliminará también sus sesiones y no se puede deshacer.`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/admin/users?id=${u.id}`, {
+        method: 'DELETE',
+      });
+
+      if (res.ok) {
+        fetchUsers();
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Error al eliminar usuario.');
+      }
+    } catch (err: any) {
+      alert(`Error de conexión: ${err.message}`);
     }
   };
 
@@ -243,12 +325,37 @@ export default function UsuariosPage() {
                   </span>
                 </td>
                 <td className="py-3 px-4 text-right">
-                  <button
-                    onClick={() => handleToggleActive(u)}
-                    className="text-[11px] underline text-slate-400 hover:text-white"
-                  >
-                    {u.activo ? 'Desactivar' : 'Activar'}
-                  </button>
+                  <div className="flex items-center justify-end gap-1.5">
+                    <button
+                      onClick={() => handleOpenEdit(u)}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 transition-colors"
+                      title="Editar usuario, rol o grupo"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+
+                    <button
+                      onClick={() => handleToggleActive(u)}
+                      className={`px-2 py-1 rounded-lg text-[10px] font-semibold transition-colors ${
+                        u.activo
+                          ? 'text-slate-400 hover:text-amber-400 hover:bg-amber-500/10'
+                          : 'text-emerald-400 hover:bg-emerald-500/10'
+                      }`}
+                      title={u.activo ? 'Desactivar acceso temporalmente' : 'Activar acceso'}
+                    >
+                      {u.activo ? 'Pausar' : 'Activar'}
+                    </button>
+
+                    {u.nombre !== 'adminCM' && (
+                      <button
+                        onClick={() => handleDeleteUser(u)}
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                        title="Eliminar usuario definitivamente"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
@@ -261,6 +368,111 @@ export default function UsuariosPage() {
           </div>
         )}
       </div>
+
+      {/* Modal Edit User */}
+      {editingUser && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+            <h2 className="text-lg font-bold text-white mb-1">Editar Usuario</h2>
+            <p className="text-xs text-slate-400 mb-4">
+              Modifica los datos, rol o grupo escolar de <span className="text-blue-400 font-semibold">{editingUser.nombre}</span>.
+            </p>
+
+            {editError && (
+              <div className="mb-3 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs">
+                {editError}
+              </div>
+            )}
+
+            <form onSubmit={handleSaveEdit} className="space-y-3.5">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
+                  Nombre Completo
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editNombre}
+                  onChange={(e) => setEditNombre(e.target.value)}
+                  className="w-full px-3.5 py-2 bg-slate-950 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
+                  Rol en el Colegio
+                </label>
+                <select
+                  value={editRol}
+                  onChange={(e) => setEditRol(e.target.value as any)}
+                  className="w-full px-3.5 py-2 bg-slate-950 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value="alumno">Alumno</option>
+                  <option value="maestro">Maestro / Docente</option>
+                  <option value="admin">Administrador / Soporte</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
+                  Grupo Escolar (grupo_id)
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ej: 1A, 2B, 3-Secundaria, Sistemas"
+                  value={editGrupo}
+                  onChange={(e) => setEditGrupo(e.target.value)}
+                  className="w-full px-3.5 py-2 bg-slate-950 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
+                  Nuevo PIN / Contraseña (Opcional)
+                </label>
+                <input
+                  type="password"
+                  placeholder="Dejar en blanco para mantener la actual"
+                  value={editPin}
+                  onChange={(e) => setEditPin(e.target.value)}
+                  className="w-full px-3.5 py-2 bg-slate-950 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 pt-1">
+                <input
+                  type="checkbox"
+                  id="chk-activo"
+                  checked={editActivo}
+                  onChange={(e) => setEditActivo(e.target.checked)}
+                  className="w-4 h-4 rounded border-slate-700 text-blue-600 focus:ring-blue-500 bg-slate-950"
+                />
+                <label htmlFor="chk-activo" className="text-xs text-slate-300 select-none">
+                  Usuario con acceso activo
+                </label>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+                <button
+                  type="button"
+                  disabled={editLoading}
+                  onClick={() => setEditingUser(null)}
+                  className="px-4 py-2 rounded-xl text-xs text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={editLoading}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white transition-colors"
+                >
+                  {editLoading ? 'Guardando...' : 'Guardar Cambios'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Modal Add User */}
       {showAddModal && (

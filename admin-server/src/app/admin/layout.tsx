@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   Server,
 } from 'lucide-react';
+import LogoutButton from './LogoutButton';
 
 export default async function AdminLayout({
   children,
@@ -103,15 +104,7 @@ export default async function AdminLayout({
               </div>
             </div>
 
-            <form action="/api/auth/logout" method="POST">
-              <button
-                type="submit"
-                title="Cerrar Sesión"
-                className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-slate-800 transition-colors"
-              >
-                <LogOut className="w-4 h-4" />
-              </button>
-            </form>
+            <LogoutButton />
           </div>
         </div>
       </aside>

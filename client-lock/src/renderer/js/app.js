@@ -156,6 +156,32 @@ formUnlock.addEventListener('submit', async (e) => {
   }
 });
 
+function resetForm() {
+  if (inputNombre) {
+    inputNombre.value = '';
+    setTimeout(() => {
+      try { inputNombre.focus(); } catch (e) {}
+    }, 120);
+  }
+  if (feedbackBanner) {
+    feedbackBanner.className = 'feedback-banner';
+    feedbackBanner.style.display = 'none';
+  }
+  if (feedbackText) {
+    feedbackText.textContent = '';
+  }
+  if (btnSubmit) {
+    btnSubmit.disabled = false;
+    btnSubmit.innerHTML = `
+      <span>Desbloquear Equipo</span>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+        <polyline points="12 5 19 12 12 19"></polyline>
+      </svg>
+    `;
+  }
+}
+
 // 4. Cierre de Sesión voluntario desde widget o atajo
 async function handleEndSession() {
   try {

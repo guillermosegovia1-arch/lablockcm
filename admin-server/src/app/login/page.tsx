@@ -41,11 +41,6 @@ export default function LoginPage() {
     }
   };
 
-  const handleQuickFillAdmin = () => {
-    setUsuario('adminCM');
-    setPassword('admin123456');
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 flex flex-col justify-center items-center p-4">
       {/* Background glow effects */}
@@ -131,18 +126,6 @@ export default function LoginPage() {
               )}
             </button>
           </form>
-
-          {/* Quick Credential Hint for Testing */}
-          <div className="mt-6 pt-5 border-t border-slate-800 text-center">
-            <button
-              type="button"
-              onClick={handleQuickFillAdmin}
-              className="text-xs text-blue-400 hover:text-blue-300 transition-colors inline-flex items-center gap-1.5"
-            >
-              <Shield className="w-3.5 h-3.5" />
-              <span>Autocompletar (`adminCM` / `admin123456`)</span>
-            </button>
-          </div>
         </div>
 
         {/* Footer */}

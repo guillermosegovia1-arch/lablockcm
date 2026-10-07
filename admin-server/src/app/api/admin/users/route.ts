@@ -93,8 +93,13 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   try {
     const body = await req.json();
-    const { id, activo, rol, grupo_id } = body;
+    const { id, activo, rol, grupo_id, pin } = body;
     const rawNombre = body.nombre || body.nombre_completo;
+
+    let hashedPin = undefined;
+    if (pin && pin.trim()) {
+      hashedPin = await bcrypt.hash(pin.trim(), 10);
+    }
 
     const updated = await prisma.user.update({
       where: { id: Number(id) },
@@ -103,6 +108,7 @@ export async function PUT(req: NextRequest) {
         ...(rol ? { rol } : {}),
         ...(grupo_id !== undefined ? { grupo_id: grupo_id ? String(grupo_id).trim() : null } : {}),
         ...(rawNombre ? { nombre: String(rawNombre).trim() } : {}),
+        ...(hashedPin !== undefined ? { pin_o_password: hashedPin } : {}),
       },
     });
 
@@ -111,3 +117,37 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ error: 'ID de usuario requerido.' }, { status: 400 });
+    }
+
+    const userId = Number(id);
+
+    const targetUser = await prisma.user.findUnique({ where: { id: userId } });
+    if (!targetUser) {
+      return NextResponse.json({ error: 'Usuario no encontrado.' }, { status: 404 });
+    }
+
+    if (targetUser.nombre === 'adminCM') {
+      return NextResponse.json(
+        { error: 'No es posible eliminar la cuenta principal de soporte técnico (adminCM).' },
+        { status: 403 }
+      );
+    }
+
+    await prisma.user.delete({
+      where: { id: userId },
+    });
+
+    return NextResponse.json({ success: true, message: 'Usuario eliminado correctamente.' });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
