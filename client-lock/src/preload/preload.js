@@ -9,6 +9,9 @@ contextBridge.exposeInMainWorld('lablockApi', {
   emergencyExitApp: () => ipcRenderer.send('emergency-exit-app'),
   triggerEndSession: () => ipcRenderer.send('trigger-end-session'),
   minimizeWidget: () => ipcRenderer.send('minimize-widget'),
+  shutdownMachine: () => ipcRenderer.send('system-shutdown'),
+  restartMachine: () => ipcRenderer.send('system-restart'),
+  sleepMachine: () => ipcRenderer.send('system-sleep'),
 
   // Event Listeners from Main
   onForceLock: (callback) => {

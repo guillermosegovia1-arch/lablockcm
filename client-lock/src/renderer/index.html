@@ -100,6 +100,31 @@
     </div>
 
     <div class="footer-actions">
+      <!-- Opciones de Energía -->
+      <button id="btn-power-sleep" class="btn-ghost btn-sleep" title="Suspender equipo para ahorro de energía">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+        <span>Suspender</span>
+      </button>
+
+      <button id="btn-power-restart" class="btn-ghost btn-restart" title="Reiniciar el equipo">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+        </svg>
+        <span>Reiniciar</span>
+      </button>
+
+      <button id="btn-power-shutdown" class="btn-ghost btn-power" title="Apagar el equipo por completo">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
+          <line x1="12" y1="2" x2="12" y2="12"></line>
+        </svg>
+        <span>Apagar</span>
+      </button>
+
+      <div class="footer-divider"></div>
+
       <button id="btn-open-settings" class="btn-ghost" title="Configurar Servidor API">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="3"></circle>
@@ -250,6 +275,32 @@
         </button>
         <button id="btn-save-settings" class="btn-primary-modal">
           Guardar Servidor
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Confirmación de Acciones de Energía (Apagar, Reiniciar, Suspender) -->
+  <div id="modal-power" class="modal-overlay">
+    <div class="modal-dialog">
+      <div id="modal-power-icon" class="modal-icon power">
+        <svg id="power-icon-svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
+          <line x1="12" y1="2" x2="12" y2="12"></line>
+        </svg>
+      </div>
+
+      <h3 id="modal-power-title" class="modal-title">¿Apagar el Equipo?</h3>
+      <p id="modal-power-body" class="modal-body">
+        La computadora se apagará por completo y se cerrará el sistema.
+      </p>
+
+      <div class="modal-buttons">
+        <button id="btn-cancel-power" class="btn-secondary">
+          Cancelar
+        </button>
+        <button id="btn-confirm-power" class="btn-danger-modal">
+          Confirmar
         </button>
       </div>
     </div>

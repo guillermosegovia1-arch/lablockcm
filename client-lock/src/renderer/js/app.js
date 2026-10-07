@@ -339,6 +339,100 @@ btnSaveSettings.addEventListener('click', () => {
   modalSettings.classList.remove('active');
 });
 
+// 8. Opciones de Energía (Apagar, Reiniciar, Suspender)
+const modalPower = document.getElementById('modal-power');
+const modalPowerIcon = document.getElementById('modal-power-icon');
+const powerIconSvg = document.getElementById('power-icon-svg');
+const modalPowerTitle = document.getElementById('modal-power-title');
+const modalPowerBody = document.getElementById('modal-power-body');
+const btnCancelPower = document.getElementById('btn-cancel-power');
+const btnConfirmPower = document.getElementById('btn-confirm-power');
+
+const btnPowerSleep = document.getElementById('btn-power-sleep');
+const btnPowerRestart = document.getElementById('btn-power-restart');
+const btnPowerShutdown = document.getElementById('btn-power-shutdown');
+
+let selectedPowerAction = null;
+
+function openPowerModal(action) {
+  selectedPowerAction = action;
+  if (!modalPower) return;
+
+  if (action === 'shutdown') {
+    modalPowerTitle.textContent = '¿Apagar el Equipo?';
+    modalPowerBody.textContent = 'La computadora se apagará por completo y se cerrará el sistema.';
+    modalPowerIcon.className = 'modal-icon power';
+    powerIconSvg.innerHTML = `
+      <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
+      <line x1="12" y1="2" x2="12" y2="12"></line>
+    `;
+    btnConfirmPower.className = 'btn-danger-modal';
+    btnConfirmPower.textContent = 'Apagar Equipo';
+  } else if (action === 'restart') {
+    modalPowerTitle.textContent = '¿Reiniciar el Equipo?';
+    modalPowerBody.textContent = 'La computadora se reiniciará y volverá a cargar la pantalla de acceso.';
+    modalPowerIcon.className = 'modal-icon restart';
+    powerIconSvg.innerHTML = `
+      <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+    `;
+    btnConfirmPower.className = 'btn-primary-modal';
+    btnConfirmPower.textContent = 'Reiniciar Equipo';
+  } else if (action === 'sleep') {
+    modalPowerTitle.textContent = '¿Suspender el Equipo?';
+    modalPowerBody.textContent = 'El equipo entrará en modo reposo de bajo consumo.';
+    modalPowerIcon.className = 'modal-icon sleep';
+    powerIconSvg.innerHTML = `
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+    `;
+    btnConfirmPower.className = 'btn-primary-modal';
+    btnConfirmPower.textContent = 'Suspender';
+  }
+
+  modalPower.classList.add('active');
+}
+
+if (btnPowerSleep) {
+  btnPowerSleep.addEventListener('click', () => openPowerModal('sleep'));
+}
+
+if (btnPowerRestart) {
+  btnPowerRestart.addEventListener('click', () => openPowerModal('restart'));
+}
+
+if (btnPowerShutdown) {
+  btnPowerShutdown.addEventListener('click', () => openPowerModal('shutdown'));
+}
+
+if (btnCancelPower) {
+  btnCancelPower.addEventListener('click', () => {
+    if (modalPower) modalPower.classList.remove('active');
+    selectedPowerAction = null;
+  });
+}
+
+if (btnConfirmPower) {
+  btnConfirmPower.addEventListener('click', () => {
+    if (modalPower) modalPower.classList.remove('active');
+
+    if (!window.lablockApi) {
+      alert(`Acción ${selectedPowerAction} no disponible en modo web.`);
+      return;
+    }
+
+    if (selectedPowerAction === 'shutdown') {
+      showFeedback('Apagando equipo...', 'error', 8000);
+      window.lablockApi.shutdownMachine();
+    } else if (selectedPowerAction === 'restart') {
+      showFeedback('Reiniciando equipo...', 'success', 8000);
+      window.lablockApi.restartMachine();
+    } else if (selectedPowerAction === 'sleep') {
+      showFeedback('Suspendiendo equipo...', 'success', 3000);
+      window.lablockApi.sleepMachine();
+    }
+    selectedPowerAction = null;
+  });
+}
+
 // Helpers
 let feedbackTimer = null;
 

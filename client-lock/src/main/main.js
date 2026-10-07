@@ -2,6 +2,7 @@ const { app, BrowserWindow, ipcMain, globalShortcut, Tray, Menu, nativeImage, sc
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
+const { exec } = require('child_process');
 
 // 🔒 Bloqueo de Instancia Única: Impide estrictamente que el programa se abra dos veces
 const gotSingleInstanceLock = app.requestSingleInstanceLock();
@@ -420,5 +421,30 @@ ipcMain.on('minimize-widget', () => {
 
 ipcMain.on('trigger-end-session', () => {
   triggerEndSession();
+});
+
+// Control de Energía del Sistema (Apagar, Reiniciar, Suspender)
+ipcMain.on('system-shutdown', () => {
+  if (process.platform === 'win32') {
+    exec('shutdown /s /t 0');
+  } else {
+    exec('shutdown -h now');
+  }
+});
+
+ipcMain.on('system-restart', () => {
+  if (process.platform === 'win32') {
+    exec('shutdown /r /t 0');
+  } else {
+    exec('shutdown -r now');
+  }
+});
+
+ipcMain.on('system-sleep', () => {
+  if (process.platform === 'win32') {
+    exec('rundll32.exe powrprof.dll,SetSuspendState 0,1,0');
+  } else {
+    exec('systemctl suspend');
+  }
 });
 
