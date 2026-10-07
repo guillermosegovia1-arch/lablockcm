@@ -3,6 +3,21 @@ const path = require('path');
 const os = require('os');
 const fs = require('fs');
 
+// 🔒 Bloqueo de Instancia Única: Impide estrictamente que el programa se abra dos veces
+const gotSingleInstanceLock = app.requestSingleInstanceLock();
+if (!gotSingleInstanceLock) {
+  app.quit();
+  process.exit(0);
+}
+
+app.on('second-instance', () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.show();
+    mainWindow.focus();
+  }
+});
+
 let mainWindow = null;
 let floatingWidgetWindow = null;
 let tray = null;
