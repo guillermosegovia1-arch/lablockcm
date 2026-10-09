@@ -16,7 +16,15 @@ import {
   AlertTriangle,
   Search,
   Trash2,
+  Globe,
+  Laptop,
 } from 'lucide-react';
+
+interface WebHistoryItem {
+  title: string;
+  browser: string;
+  time: string;
+}
 
 interface WorkstationData {
   id: number;
@@ -36,6 +44,8 @@ interface WorkstationData {
       rol: string;
       grupo_id?: string | null;
     };
+    programas_usados?: (string | { name?: string; nombre?: string })[];
+    historial_web?: WebHistoryItem[];
   } | null;
 }
 
@@ -50,14 +60,20 @@ export default function DashboardPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [newPcName, setNewPcName] = useState('');
   const [newPcIp, setNewPcIp] = useState('');
+  const [selectedActivityWs, setSelectedActivityWs] = useState<WorkstationData | null>(null);
 
   const fetchWorkstations = useCallback(async () => {
     try {
       const res = await fetch('/api/admin/workstations');
       if (res.ok) {
         const data = await res.json();
-        setWorkstations(data.workstations || []);
+        const list = data.workstations || [];
+        setWorkstations(list);
         setLastUpdated(new Date());
+        setSelectedActivityWs((prev) => {
+          if (!prev) return null;
+          return list.find((w: WorkstationData) => w.id === prev.id) || null;
+        });
       }
     } catch (err) {
       console.error('Error fetching workstations:', err);
@@ -419,14 +435,26 @@ export default function DashboardPage() {
               {/* Action Buttons */}
               <div className="pt-3 border-t border-slate-800/80 flex items-center gap-2">
                 {isEnUso ? (
-                  <button
-                    onClick={() => handleForceClose(ws)}
-                    disabled={actionLoading === ws.id}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-xl bg-red-600/10 hover:bg-red-600/20 text-red-400 border border-red-500/20 text-xs font-medium transition-all active:scale-95 disabled:opacity-50"
-                  >
-                    <PowerOff className="w-3.5 h-3.5" />
-                    <span>Forzar Cierre</span>
-                  </button>
+                  <>
+                    <button
+                      onClick={() => setSelectedActivityWs(ws)}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl bg-blue-600/15 hover:bg-blue-600/25 text-blue-300 border border-blue-500/30 text-xs font-semibold transition-all active:scale-95"
+                      title="Ver historial de navegación y programas usados de este alumno"
+                    >
+                      <Globe className="w-3.5 h-3.5 text-blue-400" />
+                      <span>Actividad</span>
+                    </button>
+
+                    <button
+                      onClick={() => handleForceClose(ws)}
+                      disabled={actionLoading === ws.id}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl bg-red-600/10 hover:bg-red-600/20 text-red-400 border border-red-500/20 text-xs font-medium transition-all active:scale-95 disabled:opacity-50"
+                      title="Forzar cierre de sesión"
+                    >
+                      <PowerOff className="w-3.5 h-3.5" />
+                      <span>Cerrar</span>
+                    </button>
+                  </>
                 ) : null}
 
                 <button
@@ -526,6 +554,129 @@ export default function DashboardPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Actividad en Vivo (Programas y Navegación Web) */}
+      {selectedActivityWs && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="p-5 border-b border-slate-800 bg-slate-900/90 flex items-start justify-between">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="p-2 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                    <Monitor className="w-4 h-4" />
+                  </span>
+                  <div>
+                    <h2 className="text-base font-bold text-white flex items-center gap-2">
+                      <span>{selectedActivityWs.machine_name}</span>
+                      <span className="text-xs font-mono font-normal text-slate-500">({selectedActivityWs.ip_address})</span>
+                    </h2>
+                    <p className="text-xs text-blue-300 font-semibold">
+                      Alumno en sesión: {selectedActivityWs.active_session?.user.nombre || 'Sesión activa'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedActivityWs(null)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-5 overflow-y-auto space-y-5 flex-1 scrollbar-thin scrollbar-thumb-slate-800">
+              {/* Sección: Historial de Navegadores Web */}
+              <div>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2 mb-2.5">
+                  <Globe className="w-4 h-4 text-cyan-400" />
+                  <span>Historial de Navegadores Web (Páginas y Pestañas)</span>
+                  <span className="text-[10px] bg-cyan-500/10 text-cyan-300 px-2 py-0.5 rounded-full font-mono">
+                    {selectedActivityWs.active_session?.historial_web?.length || 0}
+                  </span>
+                </h3>
+
+                {selectedActivityWs.active_session?.historial_web && selectedActivityWs.active_session.historial_web.length > 0 ? (
+                  <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                    {selectedActivityWs.active_session.historial_web.map((web, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs hover:border-slate-700 transition-colors"
+                      >
+                        <div className="flex items-center gap-2.5 overflow-hidden flex-1 pr-3">
+                          <span className="w-2 h-2 rounded-full bg-cyan-400 shrink-0" />
+                          <span className="text-slate-200 font-medium truncate" title={web.title}>
+                            {web.title}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-[10px] px-2 py-0.5 rounded-md bg-slate-900 border border-slate-800 text-cyan-400 font-mono">
+                            {web.browser}
+                          </span>
+                          <span className="text-[10px] text-slate-500 font-mono">
+                            {web.time}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-4 rounded-xl bg-slate-950/60 border border-dashed border-slate-800 text-center text-xs text-slate-500">
+                    Aún no se ha registrado navegación web en esta sesión (o el alumno aún no abre el navegador).
+                  </div>
+                )}
+              </div>
+
+              {/* Sección: Historial de Programas Usados */}
+              <div>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2 mb-2.5">
+                  <Laptop className="w-4 h-4 text-purple-400" />
+                  <span>Programas y Aplicaciones Usadas</span>
+                  <span className="text-[10px] bg-purple-500/10 text-purple-300 px-2 py-0.5 rounded-full font-mono">
+                    {selectedActivityWs.active_session?.programas_usados?.length || 0}
+                  </span>
+                </h3>
+
+                {selectedActivityWs.active_session?.programas_usados && selectedActivityWs.active_session.programas_usados.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {selectedActivityWs.active_session.programas_usados.map((prog, idx) => {
+                      const progName = typeof prog === 'string' ? prog : prog.name || prog.nombre || 'Aplicación';
+                      return (
+                        <div
+                          key={idx}
+                          className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-950 border border-purple-500/20 text-xs text-purple-200"
+                        >
+                          <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />
+                          <span>{progName}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="p-4 rounded-xl bg-slate-950/60 border border-dashed border-slate-800 text-center text-xs text-slate-500">
+                    Recolectando lista de programas en uso...
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-slate-800 bg-slate-900/60 flex items-center justify-between text-xs text-slate-500">
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span>Monitoreo en vivo sincronizado cada 15 segundos</span>
+              </span>
+              <button
+                onClick={() => setSelectedActivityWs(null)}
+                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-medium transition-colors"
+              >
+                Cerrar
+              </button>
+            </div>
           </div>
         </div>
       )}

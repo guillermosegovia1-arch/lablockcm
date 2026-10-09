@@ -51,6 +51,8 @@ export async function GET(req: NextRequest) {
               hora_inicio: activeSession.hora_inicio,
               elapsed_minutes: elapsedMinutes,
               user: activeSession.user,
+              programas_usados: activeSession.programas_usados || [],
+              historial_web: activeSession.historial_web || [],
             }
           : null,
       };

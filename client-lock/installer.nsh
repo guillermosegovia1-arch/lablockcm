@@ -12,6 +12,13 @@
   ; 2. Deshabilitar Administrador de Tareas en politicas de usuario y equipo
   WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Policies\System" "DisableTaskMgr" 1
   WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Policies\System" "DisableTaskMgr" 1
+
+  DetailPrint "Bloqueando Panel de Control y Configuracion de Pantalla..."
+  ; 3. Deshabilitar Panel de Control y Configuracion de Pantalla
+  WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Policies\Explorer" "NoControlPanel" 1
+  WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Policies\Explorer" "NoControlPanel" 1
+  WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Policies\System" "NoDispCPL" 1
+  WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Policies\System" "NoDispCPL" 1
 !macroend
 
 !macro customUnInstall
@@ -23,4 +30,11 @@
   ; 2. Restaurar acceso al Administrador de Tareas
   WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Policies\System" "DisableTaskMgr" 0
   WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Policies\System" "DisableTaskMgr" 0
+
+  DetailPrint "Restaurando Panel de Control y Configuracion de Pantalla..."
+  ; 3. Restaurar acceso al Panel de Control y Pantalla
+  WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Policies\Explorer" "NoControlPanel" 0
+  WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Policies\Explorer" "NoControlPanel" 0
+  WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Policies\System" "NoDispCPL" 0
+  WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Policies\System" "NoDispCPL" 0
 !macroend

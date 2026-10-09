@@ -16,6 +16,9 @@ import {
   Monitor,
   Laptop,
   Layers,
+  Lock,
+  Unlock,
+  Key,
 } from 'lucide-react';
 
 interface UserItem {
@@ -25,6 +28,7 @@ interface UserItem {
   rol: 'alumno' | 'maestro' | 'admin';
   grupo_id?: string | null;
   assigned_pc?: string | null;
+  has_password?: boolean;
   activo: boolean;
   createdAt: string;
   _count: {
@@ -58,8 +62,16 @@ export default function UsuariosPage() {
   const [editAssignedPc, setEditAssignedPc] = useState('');
   const [editActivo, setEditActivo] = useState(true);
   const [editPin, setEditPin] = useState('');
+  const [editRemovePassword, setEditRemovePassword] = useState(false);
   const [editError, setEditError] = useState('');
   const [editLoading, setEditLoading] = useState(false);
+
+  // Soporte Técnico Password state
+  const [showSupportPasswordModal, setShowSupportPasswordModal] = useState(false);
+  const [supportMasterKey, setSupportMasterKey] = useState('CMADMIN2026');
+  const [customSupportPassword, setCustomSupportPassword] = useState('');
+  const [savingSupportPassword, setSavingSupportPassword] = useState(false);
+  const [supportPasswordMsg, setSupportPasswordMsg] = useState('');
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -152,6 +164,7 @@ export default function UsuariosPage() {
     setEditGrupo(u.grupo_id || '');
     setEditActivo(u.activo);
     setEditPin('');
+    setEditRemovePassword(false);
     setEditError('');
 
     if (u.assigned_pc && u.assigned_pc.trim() !== '') {
@@ -184,7 +197,8 @@ export default function UsuariosPage() {
           grupo_id: editGrupo.trim() ? editGrupo.trim().toUpperCase() : null,
           assigned_pc: assignedPcVal,
           activo: editActivo,
-          pin: editPin.trim() || undefined,
+          quitar_contrasena: editRemovePassword,
+          contrasena: editRemovePassword ? '' : (editPin.trim() || undefined),
         }),
       });
 
@@ -199,6 +213,43 @@ export default function UsuariosPage() {
       setEditError(err.message || 'Error de conexión.');
     } finally {
       setEditLoading(false);
+    }
+  };
+
+  const handleOpenSupportPasswordModal = async () => {
+    setShowSupportPasswordModal(true);
+    setSupportPasswordMsg('');
+    try {
+      const res = await fetch('/api/admin/settings');
+      if (res.ok) {
+        const data = await res.json();
+        setSupportMasterKey(data.master_emergency_key || 'CMADMIN2026');
+        setCustomSupportPassword(data.custom_support_password || '');
+      }
+    } catch (e) {}
+  };
+
+  const handleSaveSupportPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingSupportPassword(true);
+    setSupportPasswordMsg('');
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ custom_support_password: customSupportPassword }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setSupportPasswordMsg('¡Contraseña de Soporte Técnico guardada con éxito!');
+        setTimeout(() => setShowSupportPasswordModal(false), 1400);
+      } else {
+        setSupportPasswordMsg(data.error || 'Error al guardar.');
+      }
+    } catch (err: any) {
+      setSupportPasswordMsg(err.message || 'Error de conexión.');
+    } finally {
+      setSavingSupportPassword(false);
     }
   };
 
@@ -281,6 +332,15 @@ export default function UsuariosPage() {
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            onClick={handleOpenSupportPasswordModal}
+            className="flex items-center gap-2 px-3.5 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-xs font-semibold rounded-xl border border-amber-500/30 transition-all shadow-sm"
+            title="Ver y configurar contraseña de acceso para Soporte Técnico"
+          >
+            <Key className="w-3.5 h-3.5 text-amber-400" />
+            <span>Clave Soporte Técnico</span>
+          </button>
+
           <button
             onClick={fetchUsers}
             className="flex items-center gap-2 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-xl border border-slate-700 transition-colors"
@@ -399,6 +459,7 @@ export default function UsuariosPage() {
               <th className="py-3 px-3">Rol</th>
               <th className="py-3 px-3">Grupo</th>
               <th className="py-3 px-3">Equipo Asignado</th>
+              <th className="py-3 px-3">Contraseña</th>
               <th className="py-3 px-3">Sesiones</th>
               <th className="py-3 px-3">Estado</th>
               <th className="py-3 px-4 text-right">Acción</th>
@@ -452,6 +513,19 @@ export default function UsuariosPage() {
                     <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] text-slate-400 bg-slate-800/50 border border-slate-800">
                       <Laptop className="w-3 h-3 text-slate-500" />
                       <span>Cualquier PC</span>
+                    </span>
+                  )}
+                </td>
+                <td className="py-3 px-3">
+                  {u.has_password ? (
+                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-purple-500/10 text-purple-300 border border-purple-500/30">
+                      <Lock className="w-3 h-3 text-purple-400" />
+                      <span>Con clave</span>
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] text-slate-400 bg-slate-800/40 border border-slate-800">
+                      <Unlock className="w-3 h-3 text-slate-500" />
+                      <span>Sin contraseña</span>
                     </span>
                   )}
                 </td>
@@ -632,17 +706,43 @@ export default function UsuariosPage() {
                 )}
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
-                  Nuevo PIN / Contraseña (Opcional)
-                </label>
-                <input
-                  type="password"
-                  placeholder="Dejar en blanco para mantener la actual"
-                  value={editPin}
-                  onChange={(e) => setEditPin(e.target.value)}
-                  className="w-full px-3.5 py-2 bg-slate-950 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
+              <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-semibold text-slate-300 uppercase">
+                    Contraseña de Acceso
+                  </label>
+                  {editingUser?.has_password ? (
+                    <span className="text-[10px] text-purple-400 font-medium">Actualmente tiene contraseña</span>
+                  ) : (
+                    <span className="text-[10px] text-slate-500 font-medium">Sin contraseña (acceso libre)</span>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <input
+                    type="password"
+                    disabled={editRemovePassword}
+                    placeholder={editRemovePassword ? 'Contraseña deshabilitada (acceso libre)' : (editingUser?.has_password ? 'Escribe nueva contraseña (o deja en blanco para mantener la actual)' : 'Asignar contraseña (o dejar en blanco para seguir sin clave)')}
+                    value={editPin}
+                    onChange={(e) => setEditPin(e.target.value)}
+                    className="w-full px-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
+                  />
+
+                  {editingUser?.has_password && (
+                    <label className="flex items-center gap-2 pt-1 text-xs text-amber-400 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={editRemovePassword}
+                        onChange={(e) => {
+                          setEditRemovePassword(e.target.checked);
+                          if (e.target.checked) setEditPin('');
+                        }}
+                        className="w-3.5 h-3.5 rounded border-slate-700 text-amber-500 focus:ring-amber-400 bg-slate-900"
+                      />
+                      <span>Quitar contraseña a este alumno (dejar acceso libre sin clave)</span>
+                    </label>
+                  )}
+                </div>
               </div>
 
               <div className="flex items-center gap-2 pt-1">
@@ -791,15 +891,18 @@ export default function UsuariosPage() {
 
               <div>
                 <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
-                  PIN o Contraseña (Solo para Docentes / Admin)
+                  Contraseña de Acceso (Opcional)
                 </label>
                 <input
                   type="password"
-                  placeholder="Ej: 1234"
+                  placeholder="Dejar vacío para permitir acceso libre sin contraseña"
                   value={newPin}
                   onChange={(e) => setNewPin(e.target.value)}
                   className="w-full px-3.5 py-2 bg-slate-950 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:ring-1 focus:ring-purple-500"
                 />
+                <p className="text-[10px] text-slate-500 mt-1">
+                  Si se deja vacío, el alumno podrá ingresar solo con su nombre. Si se define una clave, se requerirá para desbloquear la PC.
+                </p>
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-3">
@@ -815,6 +918,83 @@ export default function UsuariosPage() {
                   className="px-4 py-2 rounded-xl text-xs font-semibold bg-purple-600 hover:bg-purple-500 text-white transition-colors"
                 >
                   Guardar Usuario
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Configurar Contraseña de Soporte Técnico */}
+      {showSupportPasswordModal && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                <Key className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-white">Contraseña de Soporte Técnico</h2>
+                <p className="text-xs text-slate-400">
+                  Desbloqueo de emergencia y configuración en los clientes
+                </p>
+              </div>
+            </div>
+
+            {supportPasswordMsg && (
+              <div className={`p-3 rounded-xl text-xs ${
+                supportPasswordMsg.includes('éxito')
+                  ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400'
+                  : 'bg-red-500/10 border border-red-500/20 text-red-400'
+              }`}>
+                {supportPasswordMsg}
+              </div>
+            )}
+
+            <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 text-xs space-y-1.5">
+              <span className="text-slate-400 block font-medium">Contraseña Maestra Institucional:</span>
+              <div className="flex items-center justify-between font-mono bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800 text-amber-300 font-bold">
+                <span>{supportMasterKey}</span>
+                <span className="text-[10px] font-sans font-normal px-2 py-0.5 rounded bg-amber-500/20 text-amber-300">
+                  Siempre Activa (Respaldo)
+                </span>
+              </div>
+              <p className="text-[10px] text-slate-500">
+                La clave maestra principal permanece siempre habilitada ante cualquier contingencia.
+              </p>
+            </div>
+
+            <form onSubmit={handleSaveSupportPassword} className="space-y-3.5">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 uppercase mb-1">
+                  Contraseña Personalizada de Soporte
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ej: SOPORTECM2026 o clave que desees asignar"
+                  value={customSupportPassword}
+                  onChange={(e) => setCustomSupportPassword(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white font-mono text-xs focus:outline-none focus:ring-1 focus:ring-amber-500"
+                />
+                <p className="text-[10px] text-slate-400 mt-1">
+                  Puedes editar esta contraseña cuando lo necesites. Tanto esta clave como la principal permitirán desbloquear cualquier PC.
+                </p>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setShowSupportPasswordModal(false)}
+                  className="px-4 py-2 rounded-xl text-xs text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                >
+                  Cerrar
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingSupportPassword}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-amber-600 hover:bg-amber-500 text-white transition-colors"
+                >
+                  {savingSupportPassword ? 'Guardando...' : 'Guardar Contraseña'}
                 </button>
               </div>
             </form>

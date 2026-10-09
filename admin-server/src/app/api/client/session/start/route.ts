@@ -1,9 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import bcrypt from 'bcryptjs';
+
+function stripAccents(str: string): string {
+  return str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 
 export async function POST(req: NextRequest) {
   try {
-    const { nombre_completo, usuario, machine_name, ip_address } = await req.json();
+    const { nombre_completo, usuario, password, contrasena, pin, machine_name, ip_address } = await req.json();
     const queryName = (nombre_completo || usuario || '').trim();
 
     if (!queryName || !machine_name) {
@@ -17,15 +27,25 @@ export async function POST(req: NextRequest) {
     const clientIp = ip_address || '127.0.0.1';
     const normalizedName = queryName.replace(/\s+/g, ' ').trim();
 
-    // 1. Buscar usuario por nombre (insensible a mayúsculas y minúsculas)
-    const user = await prisma.user.findFirst({
+    // 1. Buscar usuario por nombre (primero búsqueda directa insensible a mayúsculas)
+    let user = await prisma.user.findFirst({
       where: {
         nombre: {
           equals: normalizedName,
           mode: 'insensitive',
         },
+        activo: true,
       },
     });
+
+    // Si no se encuentra exactamente, buscar de forma insensible a acentos/diacríticos (ej: CESAR vs CÉSAR)
+    if (!user) {
+      const strippedQuery = stripAccents(normalizedName);
+      const activeUsers = await prisma.user.findMany({
+        where: { activo: true },
+      });
+      user = activeUsers.find((u) => stripAccents(u.nombre) === strippedQuery) || null;
+    }
 
     if (!user || !user.activo) {
       return NextResponse.json(
@@ -35,6 +55,43 @@ export async function POST(req: NextRequest) {
         },
         { status: 404 }
       );
+    }
+
+    // 1.2. Verificar contraseña del usuario si el administrador le asignó una
+    if (user.pin_o_password && user.pin_o_password.trim() !== '') {
+      const enteredPassword = (password || contrasena || pin || '').toString().trim();
+
+      if (!enteredPassword) {
+        return NextResponse.json(
+          {
+            error: 'Esta cuenta requiere contraseña. Ingrésala para desbloquear el equipo.',
+            code: 'PASSWORD_REQUIRED',
+            has_password: true,
+          },
+          { status: 401 }
+        );
+      }
+
+      let passwordMatches = false;
+      try {
+        passwordMatches = await bcrypt.compare(enteredPassword, user.pin_o_password);
+      } catch (e) {
+        passwordMatches = false;
+      }
+      if (!passwordMatches && enteredPassword === user.pin_o_password) {
+        passwordMatches = true;
+      }
+
+      if (!passwordMatches) {
+        return NextResponse.json(
+          {
+            error: 'Contraseña incorrecta. Consulta con tu maestro.',
+            code: 'INVALID_PASSWORD',
+            has_password: true,
+          },
+          { status: 401 }
+        );
+      }
     }
 
     // 1.5. Verificar si el usuario tiene asignada una computadora exclusiva

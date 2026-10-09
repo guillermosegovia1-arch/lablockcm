@@ -357,10 +357,122 @@ function unregisterShortcuts() {
   globalShortcut.unregisterAll();
 }
 
+// =========================================================================
+// Blindaje: Bloquear Panel de Control y Configuración de Pantalla
+// =========================================================================
+let restrictionInterval = null;
+
+function applyKioskSecurityPolicies(enable) {
+  if (process.platform !== 'win32') return;
+  const val = enable ? '1' : '0';
+  // NoControlPanel: Bloquea control.exe y la app Configuración (ms-settings:)
+  exec(`reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer" /v NoControlPanel /t REG_DWORD /d ${val} /f`, { windowsHide: true }, () => {});
+  // NoDispCPL: Bloquea propiedades de pantalla y configuración de display
+  exec(`reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" /v NoDispCPL /t REG_DWORD /d ${val} /f`, { windowsHide: true }, () => {});
+}
+
+function startRestrictionWatchdog() {
+  stopRestrictionWatchdog();
+  if (process.platform !== 'win32') return;
+
+  // Cierra activamente cualquier intento de abrir Panel de Control o Configuración de pantalla
+  restrictionInterval = setInterval(() => {
+    if (isLocked) return;
+    exec('taskkill /f /im control.exe /im SystemSettings.exe >nul 2>&1', { windowsHide: true }, () => {});
+  }, 1500);
+}
+
+function stopRestrictionWatchdog() {
+  if (restrictionInterval) {
+    clearInterval(restrictionInterval);
+    restrictionInterval = null;
+  }
+}
+
+// =========================================================================
+// Monitoreo de Actividad de la Sesión: Programas Usados e Historial Web
+// =========================================================================
+let sessionProgramsSet = new Set();
+let sessionWebHistoryList = [];
+
+function collectSessionActivity() {
+  if (isLocked || !currentSessionData || process.platform !== 'win32') return;
+
+  const psCmd = `powershell -NoProfile -Command "Get-Process | Where-Object MainWindowTitle | Select-Object ProcessName, MainWindowTitle | ConvertTo-Json -Compress"`;
+  exec(psCmd, { timeout: 7000, windowsHide: true }, (err, stdout) => {
+    if (err || !stdout) return;
+    try {
+      let parsed = JSON.parse(stdout);
+      if (!Array.isArray(parsed)) parsed = [parsed];
+
+      const nowTime = new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+
+      parsed.forEach((item) => {
+        if (!item || !item.ProcessName) return;
+        const pName = (item.ProcessName || '').trim();
+        const winTitle = (item.MainWindowTitle || '').trim();
+
+        if (/^(lablock|electron|explorer|dwm|taskmgr|systemsettings|applicationframehost)$/i.test(pName)) return;
+
+        if (/^(chrome|msedge|firefox|brave|opera)$/i.test(pName)) {
+          let browserName = 'Navegador Web';
+          if (/chrome/i.test(pName)) browserName = 'Google Chrome';
+          else if (/msedge/i.test(pName)) browserName = 'Microsoft Edge';
+          else if (/firefox/i.test(pName)) browserName = 'Mozilla Firefox';
+          else if (/brave/i.test(pName)) browserName = 'Brave';
+          else if (/opera/i.test(pName)) browserName = 'Opera';
+
+          sessionProgramsSet.add(browserName);
+
+          if (winTitle && winTitle.length > 2 && !/^(nueva pestaña|new tab)$/i.test(winTitle)) {
+            const cleanTitle = winTitle
+              .replace(/\s*-\s*Google Chrome$/i, '')
+              .replace(/\s*-\s*Personal:\s*Microsoft Edge$/i, '')
+              .replace(/\s*-\s*Microsoft Edge$/i, '')
+              .replace(/\s*-\s*Mozilla Firefox$/i, '')
+              .replace(/\s*-\s*Brave$/i, '')
+              .trim();
+
+            if (cleanTitle && !sessionWebHistoryList.some((w) => w.title === cleanTitle)) {
+              sessionWebHistoryList.push({
+                title: cleanTitle,
+                browser: browserName,
+                time: nowTime,
+              });
+              if (sessionWebHistoryList.length > 60) sessionWebHistoryList.shift();
+            }
+          }
+        } else {
+          let friendlyName = pName;
+          if (/^code$/i.test(pName)) friendlyName = 'Visual Studio Code';
+          else if (/^winword$/i.test(pName)) friendlyName = 'Microsoft Word';
+          else if (/^excel$/i.test(pName)) friendlyName = 'Microsoft Excel';
+          else if (/^powerpnt$/i.test(pName)) friendlyName = 'Microsoft PowerPoint';
+          else if (/^notepad$/i.test(pName)) friendlyName = 'Bloc de Notas';
+          else if (/^calc|calculator$/i.test(pName)) friendlyName = 'Calculadora';
+          else if (/^mspaint$/i.test(pName)) friendlyName = 'Paint';
+          else if (/^cmd$/i.test(pName)) friendlyName = 'Símbolo del Sistema (CMD)';
+          else if (/^powershell$/i.test(pName)) friendlyName = 'PowerShell';
+          else if (/^wordpad$/i.test(pName)) friendlyName = 'WordPad';
+          else if (/^scratch/i.test(pName)) friendlyName = 'Scratch';
+
+          if (winTitle && !friendlyName.includes(winTitle) && winTitle.length < 50) {
+            friendlyName = `${friendlyName} (${winTitle})`;
+          }
+
+          sessionProgramsSet.add(friendlyName);
+        }
+      });
+    } catch (parseErr) {}
+  });
+}
+
 // Transición a Modo Desbloqueado (Alumno ingresó con éxito)
 function unlockWorkstation(sessionData) {
   isLocked = false;
   currentSessionData = sessionData;
+  sessionProgramsSet.clear();
+  sessionWebHistoryList = [];
 
   // Quitar kiosco y ocultar completamente la pantalla de bienvenida mientras dura la clase
   if (mainWindow && !mainWindow.isDestroyed()) {
@@ -371,6 +483,10 @@ function unlockWorkstation(sessionData) {
 
   // Desregistrar bloqueo agresivo de atajos durante su clase
   unregisterShortcuts();
+
+  // Bloquear Panel de Control y Configuración de Pantalla durante la sesión del alumno
+  applyKioskSecurityPolicies(true);
+  startRestrictionWatchdog();
 
   // Registrar atajo de emergencia aún disponible
   try {
@@ -390,6 +506,7 @@ function lockWorkstation(reasonMessage) {
   isLocked = true;
   currentSessionData = null;
 
+  stopRestrictionWatchdog();
   stopIdleMonitor();
   closeFloatingWidget();
 
@@ -428,6 +545,8 @@ function startHeartbeat() {
       const ip = getLocalIpAddress();
       const sessionId = currentSessionData?.session?.id || null;
 
+      collectSessionActivity();
+
       const response = await fetch(`${appConfig.serverUrl}/api/client/ping`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -435,6 +554,8 @@ function startHeartbeat() {
           machine_name: hostname,
           ip_address: ip,
           session_id: sessionId,
+          programas_usados: Array.from(sessionProgramsSet),
+          historial_web: sessionWebHistoryList,
         }),
       });
 
@@ -512,6 +633,8 @@ ipcMain.on('session-locked', (event, reason) => {
 ipcMain.on('emergency-exit-app', () => {
   isLocked = false;
   unregisterShortcuts();
+  stopRestrictionWatchdog();
+  applyKioskSecurityPolicies(false);
   app.exit(0);
 });
 

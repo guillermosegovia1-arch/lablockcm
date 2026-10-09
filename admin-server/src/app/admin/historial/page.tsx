@@ -14,6 +14,9 @@ import {
   Clock,
   AlertOctagon,
   Trash2,
+  Globe,
+  Activity,
+  Layers,
 } from 'lucide-react';
 
 interface ReportRow {
@@ -31,6 +34,8 @@ interface ReportRow {
   duracion: string;
   duracion_minutos: number;
   estado: string;
+  programas_usados?: string[] | any[];
+  historial_web?: string[] | any[];
 }
 
 function formatUserTime(isoString?: string | null, fallback?: string): string {
@@ -74,6 +79,7 @@ export default function HistorialPage() {
   const [workstation, setWorkstation] = useState('todos');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [selectedActivityRow, setSelectedActivityRow] = useState<ReportRow | null>(null);
 
   const fetchReports = useCallback(async () => {
     setLoading(true);
@@ -352,13 +358,22 @@ export default function HistorialPage() {
                   </span>
                 </td>
                 <td className="py-3 px-3 text-right">
-                  <button
-                    onClick={() => handleDeleteSession(row.id, row.nombre)}
-                    className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                    title={`Eliminar registro de ${row.nombre}`}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  <div className="flex items-center justify-end gap-1">
+                    <button
+                      onClick={() => setSelectedActivityRow(row)}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 transition-colors"
+                      title={`Ver programas y navegación web de ${row.nombre}`}
+                    >
+                      <Activity className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteSession(row.id, row.nombre)}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                      title={`Eliminar registro de ${row.nombre}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -371,6 +386,119 @@ export default function HistorialPage() {
           </div>
         )}
       </div>
+
+      {/* Modal Historial de Actividad (Navegadores y Programas) */}
+      {selectedActivityRow && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="p-5 border-b border-slate-800 bg-slate-900/90 flex items-start justify-between">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    <History className="w-4 h-4" />
+                  </span>
+                  <div>
+                    <h2 className="text-base font-bold text-white flex items-center gap-2">
+                      <span>{selectedActivityRow.nombre}</span>
+                      <span className="text-xs font-mono font-normal text-slate-400">({selectedActivityRow.equipo})</span>
+                    </h2>
+                    <p className="text-xs text-slate-400">
+                      Fecha: {formatUserDate(selectedActivityRow.hora_inicio_iso, selectedActivityRow.fecha)} • Horario: {formatUserTime(selectedActivityRow.hora_inicio_iso, selectedActivityRow.hora_entrada)} - {selectedActivityRow.hora_fin_iso ? formatUserTime(selectedActivityRow.hora_fin_iso, selectedActivityRow.hora_salida) : 'En sesión'} ({selectedActivityRow.duracion})
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedActivityRow(null)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-5 overflow-y-auto space-y-5 flex-1 custom-scrollbar">
+              {/* Navegadores Web */}
+              <div>
+                <div className="flex items-center justify-between mb-2.5">
+                  <span className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <Globe className="w-3.5 h-3.5 text-blue-400" />
+                    <span>Navegadores Web (Pestañas y Sitios Registrados)</span>
+                  </span>
+                  <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-300 border border-blue-500/20">
+                    {Array.isArray(selectedActivityRow.historial_web) ? selectedActivityRow.historial_web.length : 0} registrados
+                  </span>
+                </div>
+                {Array.isArray(selectedActivityRow.historial_web) && selectedActivityRow.historial_web.length > 0 ? (
+                  <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                    {selectedActivityRow.historial_web.map((site: any, idx: number) => {
+                      const titleStr = typeof site === 'string' ? site : site.title || JSON.stringify(site);
+                      return (
+                        <div
+                          key={idx}
+                          className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800/80 text-xs text-slate-200"
+                        >
+                          <Globe className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                          <span className="truncate" title={titleStr}>{titleStr}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="p-4 rounded-xl bg-slate-950/60 border border-dashed border-slate-800 text-center text-xs text-slate-500">
+                    No se registraron pestañas de navegadores web en esta sesión.
+                  </div>
+                )}
+              </div>
+
+              {/* Programas Usados */}
+              <div>
+                <div className="flex items-center justify-between mb-2.5">
+                  <span className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <Layers className="w-3.5 h-3.5 text-purple-400" />
+                    <span>Programas y Aplicaciones Registradas</span>
+                  </span>
+                  <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/20">
+                    {Array.isArray(selectedActivityRow.programas_usados) ? selectedActivityRow.programas_usados.length : 0} detectados
+                  </span>
+                </div>
+                {Array.isArray(selectedActivityRow.programas_usados) && selectedActivityRow.programas_usados.length > 0 ? (
+                  <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto pr-1">
+                    {selectedActivityRow.programas_usados.map((prog: any, idx: number) => {
+                      const progName = typeof prog === 'string' ? prog : prog.name || JSON.stringify(prog);
+                      return (
+                        <div
+                          key={idx}
+                          className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-950 border border-purple-500/20 text-xs text-purple-200"
+                        >
+                          <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />
+                          <span>{progName}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="p-4 rounded-xl bg-slate-950/60 border border-dashed border-slate-800 text-center text-xs text-slate-500">
+                    No se registraron aplicaciones activas en esta sesión.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-slate-800 bg-slate-900/60 flex items-center justify-between text-xs text-slate-500">
+              <span>Registro de auditoría escolar</span>
+              <button
+                onClick={() => setSelectedActivityRow(null)}
+                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-medium transition-colors"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

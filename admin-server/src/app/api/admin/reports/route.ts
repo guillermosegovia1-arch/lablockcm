@@ -163,6 +163,8 @@ export async function GET(req: NextRequest) {
         duracion: duracionTexto,
         duracion_minutos: duracionMinutos,
         estado: s.estado,
+        programas_usados: s.programas_usados || [],
+        historial_web: s.historial_web || [],
       };
     });
 

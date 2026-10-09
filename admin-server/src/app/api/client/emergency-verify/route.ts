@@ -12,9 +12,23 @@ export async function POST(req: NextRequest) {
 
     const masterKey = process.env.MASTER_EMERGENCY_KEY || 'CMADMIN2026';
 
-    // 1. Comparar con clave maestra institucional de configuración
+    // 1. Comparar con clave maestra institucional principal (CMADMIN2026 fija de contingencia)
     if (key.trim() === masterKey) {
       return NextResponse.json({ authorized: true, role: 'master_admin', message: 'Desbloqueo Maestro Autorizado' });
+    }
+
+    // 1.5. Comparar con contraseña de Soporte Técnico editada/personalizada por el administrador
+    const customSupportSetting = await prisma.systemSetting.findUnique({
+      where: { clave: 'support_password' },
+    });
+    if (customSupportSetting && customSupportSetting.valor && customSupportSetting.valor.trim() !== '') {
+      if (key.trim() === customSupportSetting.valor.trim()) {
+        return NextResponse.json({
+          authorized: true,
+          role: 'custom_support',
+          message: 'Desbloqueo de Soporte Técnico Autorizado',
+        });
+      }
     }
 
     // 2. Comparar con usuarios con rol admin

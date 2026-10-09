@@ -46,9 +46,11 @@ model Session {
   fecha          DateTime     @default(now())
   hora_inicio    DateTime     @default(now())
   hora_fin       DateTime?
-  estado         String       @default("activa") // 'activa' | 'cerrada' | 'forzada_cierre'
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  estado           String       @default("activa") // 'activa' | 'cerrada' | 'forzada_cierre'
+  programas_usados Json?        @default("[]")
+  historial_web    Json?        @default("[]")
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
 
   user           User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
   workstation    Workstation  @relation(fields: [workstation_id], references: [id], onDelete: Cascade)
@@ -58,3 +60,13 @@ model Session {
   @@index([estado])
   @@map("sessions")
 }
+
+model SystemSetting {
+  id        Int      @id @default(autoincrement())
+  clave     String   @unique // Ej: 'support_password'
+  valor     String
+  updatedAt DateTime @updatedAt
+
+  @@map("system_settings")
+}
+

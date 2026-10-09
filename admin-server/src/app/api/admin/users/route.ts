@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
       where.grupo_id = grupo;
     }
 
-    const users = await prisma.user.findMany({
+    const rawUsers = await prisma.user.findMany({
       where,
       orderBy: { nombre: 'asc' },
       take: 200,
@@ -36,12 +36,25 @@ export async function GET(req: NextRequest) {
         grupo_id: true,
         activo: true,
         assigned_pc: true,
+        pin_o_password: true,
         createdAt: true,
         _count: {
           select: { sessions: true },
         },
       },
     });
+
+    const users = rawUsers.map((u) => ({
+      id: u.id,
+      nombre: u.nombre,
+      rol: u.rol,
+      grupo_id: u.grupo_id,
+      activo: u.activo,
+      assigned_pc: u.assigned_pc,
+      has_password: Boolean(u.pin_o_password && u.pin_o_password.trim() !== ''),
+      createdAt: u.createdAt,
+      _count: u._count,
+    }));
 
     return NextResponse.json({ users });
   } catch (error: any) {
@@ -56,7 +69,7 @@ export async function POST(req: NextRequest) {
     const rol = body.rol || 'alumno';
     const grupo_id = body.grupo_id ? String(body.grupo_id).trim() : null;
     const assigned_pc = body.assigned_pc ? String(body.assigned_pc).trim().toUpperCase() : null;
-    const pin = body.pin;
+    const rawPassword = body.contrasena || body.password || body.pin;
 
     if (!rawNombre) {
       return NextResponse.json({ error: 'El nombre es obligatorio.' }, { status: 400 });
@@ -72,8 +85,8 @@ export async function POST(req: NextRequest) {
     }
 
     let hashedPin = null;
-    if (pin) {
-      hashedPin = await bcrypt.hash(pin.trim(), 10);
+    if (rawPassword && String(rawPassword).trim() !== '') {
+      hashedPin = await bcrypt.hash(String(rawPassword).trim(), 10);
     }
 
     const user = await prisma.user.create({
@@ -87,7 +100,14 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return NextResponse.json({ success: true, user });
+    return NextResponse.json({
+      success: true,
+      user: {
+        ...user,
+        pin_o_password: undefined,
+        has_password: Boolean(user.pin_o_password),
+      },
+    });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -96,12 +116,15 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   try {
     const body = await req.json();
-    const { id, activo, rol, grupo_id, pin, assigned_pc } = body;
+    const { id, activo, rol, grupo_id, pin, password, contrasena, quitar_contrasena, remove_pin, assigned_pc } = body;
     const rawNombre = body.nombre || body.nombre_completo;
+    const incomingPassword = contrasena !== undefined ? contrasena : (password !== undefined ? password : pin);
 
-    let hashedPin = undefined;
-    if (pin && pin.trim()) {
-      hashedPin = await bcrypt.hash(pin.trim(), 10);
+    let hashedPin: string | null | undefined = undefined;
+    if (quitar_contrasena === true || remove_pin === true || incomingPassword === '') {
+      hashedPin = null; // Eliminar contraseña (dejar libre de acceso)
+    } else if (incomingPassword && String(incomingPassword).trim() !== '') {
+      hashedPin = await bcrypt.hash(String(incomingPassword).trim(), 10);
     }
 
     const cleanAssignedPc = assigned_pc !== undefined
@@ -120,7 +143,14 @@ export async function PUT(req: NextRequest) {
       },
     });
 
-    return NextResponse.json({ success: true, user: updated });
+    return NextResponse.json({
+      success: true,
+      user: {
+        ...updated,
+        pin_o_password: undefined,
+        has_password: Boolean(updated.pin_o_password),
+      },
+    });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

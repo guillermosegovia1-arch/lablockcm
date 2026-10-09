@@ -16,6 +16,7 @@ const clockDate = document.getElementById('clock-date');
 
 const formUnlock = document.getElementById('form-unlock');
 const inputNombre = document.getElementById('input-nombre');
+const inputPassword = document.getElementById('input-password');
 const btnSubmit = document.getElementById('btn-submit');
 const feedbackBanner = document.getElementById('feedback-banner');
 const feedbackText = document.getElementById('feedback-text');
@@ -98,6 +99,7 @@ formUnlock.addEventListener('submit', async (e) => {
   hideFeedback();
 
   const nombre = inputNombre.value.trim();
+  const password = inputPassword ? inputPassword.value.trim() : '';
   if (!nombre) return;
 
   btnSubmit.disabled = true;
@@ -112,12 +114,22 @@ formUnlock.addEventListener('submit', async (e) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         nombre_completo: nombre,
+        password: password,
         machine_name: systemInfo.hostname,
         ip_address: systemInfo.ip,
       }),
     });
 
     const data = await res.json();
+
+    if (res.status === 401) {
+      showFeedback(data.error || 'Esta cuenta requiere contraseña. Ingrésala para desbloquear.', 'error');
+      if (inputPassword) {
+        inputPassword.focus();
+        inputPassword.select();
+      }
+      return;
+    }
 
     if (res.status === 404) {
       showFeedback(data.error || 'Usuario no encontrado en el sistema escolar.', 'error');
@@ -170,6 +182,9 @@ function resetForm(clearFeedback = false) {
     setTimeout(() => {
       try { inputNombre.focus(); } catch (e) {}
     }, 120);
+  }
+  if (inputPassword) {
+    inputPassword.value = '';
   }
   if (clearFeedback) {
     hideFeedback();
