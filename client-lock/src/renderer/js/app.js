@@ -125,6 +125,12 @@ formUnlock.addEventListener('submit', async (e) => {
       return;
     }
 
+    if (res.status === 403) {
+      showFeedback(data.error || `Acceso restringido: Tienes otra PC asignada. No puedes iniciar sesión en [${systemInfo.hostname}].\nConsulta con tu maestro tu PC Asignada.`, 'error');
+      inputNombre.select();
+      return;
+    }
+
     if (res.status === 409) {
       showDuplicateSessionModal(data.active_machine || 'OTRO EQUIPO');
       return;

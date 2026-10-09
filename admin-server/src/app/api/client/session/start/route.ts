@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
       if (allowedPc !== 'ALL' && allowedPc !== '*' && allowedPc !== 'CUALQUIERA' && allowedPc !== cleanMachineName) {
         return NextResponse.json(
           {
-            error: `Acceso restringido: Tienes asignada exclusivamente la computadora [${allowedPc}]. No puedes iniciar sesión en [${cleanMachineName}].`,
+            error: `Acceso restringido: Tienes otra PC asignada. No puedes iniciar sesión en [${cleanMachineName}].\nConsulta con tu maestro tu PC Asignada.`,
             code: 'PC_RESTRICTED',
             assigned_pc: allowedPc,
           },

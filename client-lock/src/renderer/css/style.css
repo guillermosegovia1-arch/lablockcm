@@ -299,6 +299,7 @@ main {
   align-items: center;
   gap: 10px;
   text-align: left;
+  white-space: pre-line;
 }
 
 .feedback-banner.show {
