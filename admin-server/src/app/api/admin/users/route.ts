@@ -35,6 +35,7 @@ export async function GET(req: NextRequest) {
         rol: true,
         grupo_id: true,
         activo: true,
+        assigned_pc: true,
         createdAt: true,
         _count: {
           select: { sessions: true },
@@ -54,6 +55,7 @@ export async function POST(req: NextRequest) {
     const rawNombre = body.nombre || body.nombre_completo;
     const rol = body.rol || 'alumno';
     const grupo_id = body.grupo_id ? String(body.grupo_id).trim() : null;
+    const assigned_pc = body.assigned_pc ? String(body.assigned_pc).trim().toUpperCase() : null;
     const pin = body.pin;
 
     if (!rawNombre) {
@@ -79,6 +81,7 @@ export async function POST(req: NextRequest) {
         nombre: cleanNombre,
         rol: rol || 'alumno',
         grupo_id: grupo_id,
+        assigned_pc: assigned_pc === 'ALL' || !assigned_pc ? null : assigned_pc,
         activo: true,
         pin_o_password: hashedPin,
       },
@@ -93,7 +96,7 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   try {
     const body = await req.json();
-    const { id, activo, rol, grupo_id, pin } = body;
+    const { id, activo, rol, grupo_id, pin, assigned_pc } = body;
     const rawNombre = body.nombre || body.nombre_completo;
 
     let hashedPin = undefined;
@@ -101,12 +104,17 @@ export async function PUT(req: NextRequest) {
       hashedPin = await bcrypt.hash(pin.trim(), 10);
     }
 
+    const cleanAssignedPc = assigned_pc !== undefined
+      ? (assigned_pc && String(assigned_pc).trim().toUpperCase() !== 'ALL' && String(assigned_pc).trim() !== '' ? String(assigned_pc).trim().toUpperCase() : null)
+      : undefined;
+
     const updated = await prisma.user.update({
       where: { id: Number(id) },
       data: {
         ...(activo !== undefined ? { activo } : {}),
         ...(rol ? { rol } : {}),
         ...(grupo_id !== undefined ? { grupo_id: grupo_id ? String(grupo_id).trim() : null } : {}),
+        ...(cleanAssignedPc !== undefined ? { assigned_pc: cleanAssignedPc } : {}),
         ...(rawNombre ? { nombre: String(rawNombre).trim() } : {}),
         ...(hashedPin !== undefined ? { pin_o_password: hashedPin } : {}),
       },

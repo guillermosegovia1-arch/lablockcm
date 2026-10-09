@@ -105,22 +105,16 @@ Esto generará en la carpeta `client-lock/dist/` el archivo instalador:
 
 ---
 
-### Paso 4.4: Blindar el Equipo contra Alumnos (Inicio Automático y Anti-Taskkill)
+### Paso 4.4: Blindaje Automático Integrado en el Instalador
+El instalador `.exe` ya **incluye de forma automática y transparente** este blindaje al momento de instalarse en la máquina:
+1. **Inicio Automático Indetenible**: Registra la tarea programada `LabLockCM_Kiosk` en Windows con nivel de privilegio máximo (`onlogon /rl highest`).
+2. **Bloqueo del Administrador de Tareas**: Deshabilita el Administrador de Tareas (`DisableTaskMgr = 1`) para evitar que los alumnos usen `Ctrl + Alt + Supr` o `Ctrl + Shift + Esc` para cerrar el programa.
+3. **Desinstalación Limpia**: Si en el futuro desinstalas el programa desde el Panel de Control de Windows, restaura el Administrador de Tareas y elimina la tarea programada automáticamente.
 
-Abre la consola de comandos (`cmd.exe`) como **Administrador** en la máquina del alumno y ejecuta:
+*(Opcional: Si deseas activarlo o desactivarlo manualmente sin reinstalar, puedes usar los scripts en `scripts/activar-blindaje-kiosco.bat` y `scripts/desactivar-blindaje-kiosco.bat`).*
 
-#### 1. Iniciar automáticamente con Windows (Tarea de Máxima Prioridad):
-```cmd
-schtasks /create /tn "LabLockCM_Kiosk" /tr "\"C:\Program Files\LabLock CM Client\LabLock CM Client.exe\"" /sc onlogon /rl highest /f
-```
-
-#### 2. Deshabilitar el Administrador de Tareas (para que no puedan matar la tarea con Ctrl+Alt+Supr):
-```cmd
-reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Policies\System" /v DisableTaskMgr /t REG_DWORD /d 1 /f
-```
-
-#### 3. Cuenta de Usuario del Alumno:
-Asegúrate de que los alumnos inicien sesión en una cuenta de **Usuario Estándar** (no Administrador). De esta forma, Windows impedirá por completo cerrar procesos protegidos.
+#### Cuenta de Usuario de los Alumnos:
+Se recomienda configurar las máquinas para que los alumnos inicien sesión en una cuenta de **Usuario Estándar** de Windows (sin permisos de Administrador).
 
 ---
 

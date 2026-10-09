@@ -24,11 +24,44 @@ interface ReportRow {
   equipo: string;
   fecha: string;
   fecha_raw: string;
+  hora_inicio_iso?: string;
+  hora_fin_iso?: string | null;
   hora_entrada: string;
   hora_salida: string;
   duracion: string;
   duracion_minutos: number;
   estado: string;
+}
+
+function formatUserTime(isoString?: string | null, fallback?: string): string {
+  if (!isoString) return fallback || '---';
+  try {
+    const d = new Date(isoString);
+    if (isNaN(d.getTime())) return fallback || '---';
+    return d.toLocaleTimeString('es-MX', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+    });
+  } catch {
+    return fallback || '---';
+  }
+}
+
+function formatUserDate(isoString?: string | null, fallback?: string): string {
+  if (!isoString) return fallback || '---';
+  try {
+    const d = new Date(isoString);
+    if (isNaN(d.getTime())) return fallback || '---';
+    return d.toLocaleDateString('es-MX', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
+  } catch {
+    return fallback || '---';
+  }
 }
 
 export default function HistorialPage() {
@@ -291,13 +324,13 @@ export default function HistorialPage() {
                   {row.equipo}
                 </td>
                 <td className="py-3 px-3 text-slate-300">
-                  {row.fecha}
+                  {formatUserDate(row.hora_inicio_iso, row.fecha)}
                 </td>
                 <td className="py-3 px-3 font-mono text-emerald-400">
-                  {row.hora_entrada}
+                  {formatUserTime(row.hora_inicio_iso, row.hora_entrada)}
                 </td>
                 <td className="py-3 px-3 font-mono text-slate-400">
-                  {row.hora_salida}
+                  {row.hora_fin_iso ? formatUserTime(row.hora_fin_iso, row.hora_salida) : (row.estado === 'activa' ? 'En sesión...' : row.hora_salida)}
                 </td>
                 <td className="py-3 px-3 font-medium text-white">
                   {row.duracion}

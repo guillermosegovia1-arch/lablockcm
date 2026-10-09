@@ -13,6 +13,10 @@ contextBridge.exposeInMainWorld('lablockApi', {
   restartMachine: () => ipcRenderer.send('system-restart'),
   sleepMachine: () => ipcRenderer.send('system-sleep'),
 
+  // Diálogo y Control de Inactividad
+  cancelIdleWarning: () => ipcRenderer.send('cancel-idle-warning'),
+  confirmIdleEndSession: () => ipcRenderer.send('confirm-idle-end-session'),
+
   // Event Listeners from Main
   onForceLock: (callback) => {
     ipcRenderer.on('force-lock', (_event, data) => callback(data));

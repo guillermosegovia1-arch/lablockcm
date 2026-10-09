@@ -1,0 +1,22 @@
+
+
+
+
+Agregarlos a inicio
+win + R
+shell:common startup
+pegar el acceso directo del .exe
+
+
+Bloquear Administrador de Tareas
+
+Presiona Windows + R, escribe:
+cmd
+gpedit.msc
+y presiona Enter.
+En el panel izquierdo navega a: 📁 Configuración de usuario
+└── 📁 Plantillas administrativas
+      └── 📁 Sistema
+            └── 📁 Opciones de Ctrl+Alt+Supr
+En el panel derecho haz doble clic en "Quitar Administrador de tareas" (Remove Task Manager).
+Marca la casilla Habilitada (Enabled) y pulsa Aceptar.

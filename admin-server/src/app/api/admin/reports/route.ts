@@ -102,6 +102,9 @@ export async function GET(req: NextRequest) {
 
     availableGroups.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
 
+    // Zona horaria escolar oficial de México (ej. Reynosa/Monterrey/CDMX)
+    const TIMEZONE_ESCOLAR = 'America/Monterrey';
+
     const formatted = sessions.map((s) => {
       const inicio = new Date(s.hora_inicio);
       const fin = s.hora_fin ? new Date(s.hora_fin) : null;
@@ -119,16 +122,44 @@ export async function GET(req: NextRequest) {
         duracionTexto = `En curso (${transcurrido}m)`;
       }
 
+      // Formateo con zona horaria de México
+      const fechaLocal = inicio.toLocaleDateString('es-MX', {
+        timeZone: TIMEZONE_ESCOLAR,
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      });
+
+      const horaEntradaLocal = inicio.toLocaleTimeString('es-MX', {
+        timeZone: TIMEZONE_ESCOLAR,
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true,
+      });
+
+      const horaSalidaLocal = fin
+        ? fin.toLocaleTimeString('es-MX', {
+            timeZone: TIMEZONE_ESCOLAR,
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: true,
+          })
+        : '---';
+
       return {
         id: s.id,
         nombre: s.user.nombre,
         rol: s.user.rol,
         grupo_id: s.user.grupo_id || '---',
         equipo: s.workstation.machine_name,
-        fecha: inicio.toLocaleDateString('es-MX'),
+        fecha: fechaLocal,
         fecha_raw: inicio.toISOString().split('T')[0],
-        hora_entrada: inicio.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-        hora_salida: fin ? fin.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '---',
+        hora_inicio_iso: inicio.toISOString(),
+        hora_fin_iso: fin ? fin.toISOString() : null,
+        hora_entrada: horaEntradaLocal,
+        hora_salida: horaSalidaLocal,
         duracion: duracionTexto,
         duracion_minutos: duracionMinutos,
         estado: s.estado,

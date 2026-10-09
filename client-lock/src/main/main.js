@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, globalShortcut, Tray, Menu, nativeImage, screen } = require('electron');
+const { app, BrowserWindow, ipcMain, globalShortcut, Tray, Menu, nativeImage, screen, powerMonitor } = require('electron');
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
@@ -21,10 +21,13 @@ app.on('second-instance', () => {
 
 let mainWindow = null;
 let floatingWidgetWindow = null;
+let idleWarningWindow = null;
 let tray = null;
 let isLocked = true;
 let currentSessionData = null;
 let heartbeatInterval = null;
+let idleMonitorInterval = null;
+let warningDismissedUntil = 0;
 
 // Configuración por defecto o persistida
 const configPath = path.join(app.getPath('userData'), 'lablock-config.json');
@@ -149,6 +152,101 @@ function closeFloatingWidget() {
     floatingWidgetWindow.close();
     floatingWidgetWindow = null;
   }
+}
+
+// Crear ventana de diálogo de aviso de inactividad (4 minutos = advertencia, 5 minutos = cierre)
+function createIdleWarningWindow() {
+  if (idleWarningWindow && !idleWarningWindow.isDestroyed()) {
+    idleWarningWindow.show();
+    idleWarningWindow.focus();
+    return;
+  }
+
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const { width, height } = primaryDisplay.workAreaSize;
+  const wWidth = 460;
+  const wHeight = 260;
+
+  idleWarningWindow = new BrowserWindow({
+    width: wWidth,
+    height: wHeight,
+    x: Math.floor((width - wWidth) / 2),
+    y: Math.floor((height - wHeight) / 2),
+    frame: false,
+    alwaysOnTop: true,
+    transparent: true,
+    resizable: false,
+    closable: false,
+    minimizable: false,
+    maximizable: false,
+    skipTaskbar: false,
+    backgroundColor: '#00000000',
+    webPreferences: {
+      preload: path.join(__dirname, '../preload/preload.js'),
+      nodeIntegration: false,
+      contextIsolation: true,
+    },
+  });
+
+  idleWarningWindow.setAlwaysOnTop(true, 'screen-saver');
+  idleWarningWindow.loadFile(path.join(__dirname, '../renderer/idle-dialog.html'));
+
+  idleWarningWindow.on('closed', () => {
+    idleWarningWindow = null;
+  });
+}
+
+function closeIdleWarningWindow() {
+  if (idleWarningWindow && !idleWarningWindow.isDestroyed()) {
+    idleWarningWindow.close();
+    idleWarningWindow = null;
+  }
+}
+
+// Iniciar monitoreo del sistema operativo contra inactividad (powerMonitor)
+function startIdleMonitor() {
+  stopIdleMonitor();
+  warningDismissedUntil = 0;
+
+  idleMonitorInterval = setInterval(() => {
+    if (isLocked) {
+      closeIdleWarningWindow();
+      return;
+    }
+
+    // Si el usuario presionó 'Cancelar', respetar período de gracia de 4 minutos
+    if (Date.now() < warningDismissedUntil) {
+      return;
+    }
+
+    let idleSeconds = 0;
+    try {
+      idleSeconds = powerMonitor.getSystemIdleTime();
+    } catch (err) {
+      return;
+    }
+
+    // Al llegar a 4 minutos (240 segundos) de inactividad, abrir diálogo de conteo regresivo
+    if (idleSeconds >= 240) {
+      if (!idleWarningWindow || idleWarningWindow.isDestroyed()) {
+        createIdleWarningWindow();
+      }
+    }
+
+    // Al llegar a 5 minutos (300 segundos) de inactividad sin respuesta, cerrar sesión automáticamente
+    if (idleSeconds >= 300) {
+      closeIdleWarningWindow();
+      triggerEndSession();
+    }
+  }, 1000);
+}
+
+function stopIdleMonitor() {
+  if (idleMonitorInterval) {
+    clearInterval(idleMonitorInterval);
+    idleMonitorInterval = null;
+  }
+  closeIdleWarningWindow();
 }
 
 // Crear icono en la bandeja del sistema (System Tray)
@@ -281,8 +379,9 @@ function unlockWorkstation(sessionData) {
     });
   } catch (e) {}
 
-  // Mostrar widget flotante y actualizar tray
+  // Mostrar widget flotante, iniciar monitor de inactividad y actualizar tray
   createFloatingWidget();
+  startIdleMonitor();
   updateTrayMenu();
 }
 
@@ -291,6 +390,7 @@ function lockWorkstation(reasonMessage) {
   isLocked = true;
   currentSessionData = null;
 
+  stopIdleMonitor();
   closeFloatingWidget();
 
   if (mainWindow && !mainWindow.isDestroyed()) {
@@ -420,6 +520,18 @@ ipcMain.on('minimize-widget', () => {
 });
 
 ipcMain.on('trigger-end-session', () => {
+  triggerEndSession();
+});
+
+// Control de Diálogo de Inactividad (Ok / Cancelar)
+ipcMain.on('cancel-idle-warning', () => {
+  closeIdleWarningWindow();
+  // Concede 4 minutos adicionales de uso activo antes de volver a verificar inactividad
+  warningDismissedUntil = Date.now() + (4 * 60 * 1000);
+});
+
+ipcMain.on('confirm-idle-end-session', () => {
+  closeIdleWarningWindow();
   triggerEndSession();
 });
 

@@ -16,6 +16,7 @@ model User {
   grupo_id        String?   // Identificador del grupo escolar (ej. '1A', '2B', 'Sistemas')
   activo          Boolean   @default(true)
   pin_o_password  String?   // Hash bcrypt para adminCM y docentes
+  assigned_pc     String?   // Nombre de PC autorizada (null o vacio = cualquier computadora)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 

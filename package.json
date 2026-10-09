@@ -25,5 +25,8 @@
     "laboratory-lock"
   ],
   "author": "Colegio Mexicano IT",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "util-deprecate": "^1.0.2"
+  }
 }

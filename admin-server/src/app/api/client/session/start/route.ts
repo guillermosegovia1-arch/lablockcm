@@ -37,6 +37,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // 1.5. Verificar si el usuario tiene asignada una computadora exclusiva
+    if (user.assigned_pc && user.assigned_pc.trim() !== '') {
+      const allowedPc = user.assigned_pc.trim().toUpperCase();
+      if (allowedPc !== 'ALL' && allowedPc !== '*' && allowedPc !== 'CUALQUIERA' && allowedPc !== cleanMachineName) {
+        return NextResponse.json(
+          {
+            error: `Acceso restringido: Tienes asignada exclusivamente la computadora [${allowedPc}]. No puedes iniciar sesión en [${cleanMachineName}].`,
+            code: 'PC_RESTRICTED',
+            assigned_pc: allowedPc,
+          },
+          { status: 403 }
+        );
+      }
+    }
+
     // 2. Verificar si el usuario YA tiene una sesión activa en cualquier equipo
     const existingActiveSession = await prisma.session.findFirst({
       where: {

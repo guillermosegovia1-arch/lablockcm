@@ -80,6 +80,19 @@ export async function POST(req: NextRequest) {
 
       const rawPin = row['PIN'] || row['pin'] || row['Password'] || row['password'];
 
+      const rawPc =
+        row['PC'] ||
+        row['pc'] ||
+        row['Equipo'] ||
+        row['equipo'] ||
+        row['PC_Asignada'] ||
+        row['pc_asignada'] ||
+        row['Equipo_Asignado'] ||
+        row['equipo_asignado'] ||
+        row['Computadora'] ||
+        row['computadora'] ||
+        null;
+
       if (!rawNombre) {
         errors++;
         errorDetails.push(`Fila ${index + 2}: Nombre faltante.`);
@@ -88,6 +101,9 @@ export async function POST(req: NextRequest) {
 
       const nombre = String(rawNombre).trim();
       const grupo_id = rawGrupo ? String(rawGrupo).trim() : null;
+      const cleanPc = rawPc && String(rawPc).trim().toUpperCase() !== 'ALL' && String(rawPc).trim().toUpperCase() !== 'CUALQUIERA' && String(rawPc).trim() !== ''
+        ? String(rawPc).trim().toUpperCase()
+        : null;
 
       let rol = String(rawRol).trim().toLowerCase();
       if (rol.includes('maestr') || rol.includes('docent') || rol.includes('prof')) {
@@ -112,6 +128,7 @@ export async function POST(req: NextRequest) {
             data: {
               rol,
               grupo_id,
+              ...(cleanPc !== undefined ? { assigned_pc: cleanPc } : {}),
               activo: true,
               ...(passwordHash ? { pin_o_password: passwordHash } : {}),
             },
@@ -123,6 +140,7 @@ export async function POST(req: NextRequest) {
               nombre,
               rol,
               grupo_id,
+              assigned_pc: cleanPc,
               activo: true,
               pin_o_password: passwordHash || null,
             },
